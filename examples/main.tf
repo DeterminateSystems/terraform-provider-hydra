@@ -21,3 +21,56 @@ resource "hydra_project" "nixpkgs" {
   enabled = true
   visible = false
 }
+
+resource "hydra_jobset" "trunk" {
+  project     = hydra_project.nixpkgs.name
+  state       = "enabled"
+  visible     = true
+  name        = "trunk"
+  type        = "legacy"
+  description = "master branch"
+
+  nix_expression {
+    file = "pkgs/top-level/release.nix"
+    in   = "nixpkgs"
+  }
+
+  check_interval    = 21600
+  scheduling_shares = 3000
+
+  email_notifications = true
+  email_override      = "example@example.com"
+  keep_evaluations    = 3
+
+  input {
+    name              = "nixpkgs"
+    type              = "git"
+    value             = "https://github.com/NixOS/nixpkgs.git"
+    notify_committers = false
+  }
+
+  input {
+    name              = "officialRelease"
+    type              = "bool"
+    value             = "false"
+    notify_committers = false
+  }
+}
+
+resource "hydra_jobset" "trunk-flake" {
+  project     = hydra_project.nixpkgs.name
+  state       = "enabled"
+  visible     = true
+  name        = "trunk-flake"
+  type        = "flake"
+  description = "master branch"
+
+  flake_uri = "github:NixOS/nixpkgs/master"
+
+  check_interval    = 21600
+  scheduling_shares = 3000
+
+  email_notifications = true
+  email_override      = "example@example.com"
+  keep_evaluations    = 3
+}
