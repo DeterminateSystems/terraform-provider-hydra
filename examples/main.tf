@@ -21,7 +21,7 @@ resource "hydra_project" "nixpkgs" {
   owner        = "alice"
   # TODO: declarative configuration
   enabled = true
-  hidden  = false
+  visible = true
 }
 
 resource "hydra_jobset" "trunk" {
