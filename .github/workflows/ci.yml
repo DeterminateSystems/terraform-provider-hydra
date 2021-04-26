@@ -90,6 +90,7 @@ jobs:
       - name: Terraform validate
         working-directory: ./examples
         run: terraform validate -no-color
-      - name: Terraform plan
-        working-directory: ./examples
-        run: terraform plan -no-color
+      # TODO: needs hydra running
+      # - name: Terraform plan
+      #   working-directory: ./examples
+      #   run: terraform plan -no-color
