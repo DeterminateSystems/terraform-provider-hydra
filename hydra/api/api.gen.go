@@ -292,6 +292,9 @@ type Project struct {
 	// when set to true the project is not displayed in the web interface
 	Hidden *bool `json:"hidden,omitempty"`
 
+	// homepage of the project
+	Homepage *string `json:"homepage,omitempty"`
+
 	// list of jobsets belonging to this project
 	Jobsets *[]string `json:"jobsets,omitempty"`
 
@@ -387,14 +390,14 @@ type PutProjectIdJSONBody struct {
 	// when set to true the project gets scheduled for evaluation
 	Enabled *bool `json:"enabled,omitempty"`
 
-	// when set to true the project is displayed in the web interface
-	Hidden *bool `json:"hidden,omitempty"`
-
 	// homepage of the project
 	Homepage *string `json:"homepage,omitempty"`
 
 	// owner of the project
 	Owner *string `json:"owner,omitempty"`
+
+	// when set to true the project is displayed in the web interface
+	Visible *bool `json:"visible,omitempty"`
 }
 
 // GetSearchParams defines parameters for GetSearch.

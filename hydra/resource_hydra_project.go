@@ -52,11 +52,11 @@ func resourceHydraProject() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
-			"hidden": {
-				Description: "Whether or not the project is hidden.",
+			"visible": {
+				Description: "Whether or not the project is visible.",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
+				Default:     true,
 			},
 		},
 	}
@@ -90,7 +90,7 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 	homepage := d.Get("homepage").(string)
 	owner := d.Get("owner").(string)
 	enabled := d.Get("enabled").(bool)
-	hidden := d.Get("hidden").(bool)
+	visible := d.Get("visible").(bool)
 
 	body := api.PutProjectIdJSONRequestBody{
 		Displayname: &display_name,
@@ -98,7 +98,7 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 		Homepage:    &homepage,
 		Owner:       &owner,
 		Enabled:     &enabled,
-		Hidden:      &hidden,
+		Visible:     &visible,
 	}
 
 	put, err := client.PutProjectIdWithResponse(ctx, name, body)
@@ -130,7 +130,45 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 }
 
 func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	client := m.(*api.ClientWithResponses)
+
+	var diags diag.Diagnostics
+
+	name := d.Id()
+
+	get, err := client.GetProjectIdWithResponse(ctx, name, func(ctx context.Context, req *http.Request) error {
+		req.Header.Add("Accept", "application/json")
+		req.Header.Add("Content-Type", "application/json")
+		return nil
+	})
+	if err != nil {
+		d.SetId("")
+		return diag.FromErr(err)
+	}
+	defer get.HTTPResponse.Body.Close()
+
+	// Check to make sure the project exists
+	if get.HTTPResponse.StatusCode != http.StatusOK {
+		d.SetId("")
+		return append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Failed to read Project",
+			Detail:   "Project does not exist.",
+		})
+	}
+
+	project := get.JSON200
+
+	d.Set("name", *project.Name)
+	d.Set("display_name", *project.Displayname)
+	d.Set("description", *project.Description)
+	d.Set("homepage", *project.Homepage)
+	d.Set("owner", *project.Owner)
+	d.Set("enabled", *project.Enabled)
+	d.Set("visible", !(*project.Hidden))
+	d.SetId(*project.Name)
+
+	return diags
 }
 
 func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
