@@ -9,6 +9,7 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
 			"hydra_project": resourceHydraProject(),
+			"hydra_jobset":  resourceHydraJobset(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{},
 	}
