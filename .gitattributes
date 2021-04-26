@@ -1,1 +1,3 @@
 nix/sources.nix linguist-generated=true
+hydra/api/api.gen.go linguist-generated=true
+go.sum linguist-generated=true

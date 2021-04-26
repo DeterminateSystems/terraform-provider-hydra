@@ -6,7 +6,7 @@ BINARY=terraform-provider-${NAME}
 VERSION=0.1
 OS_ARCH=linux_amd64
 
-default: install
+default: api install
 
 build:
 	go build -o ${BINARY}
@@ -28,6 +28,21 @@ release:
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+
+.PHONY: api
+api: hydra/api/api.gen.go
+
+hydra/api/api.gen.go: hydra/api/hydra-api.yaml
+	mkdir -p $(shell dirname $@)
+	oapi-codegen \
+		-package api \
+		-generate types,client $< > $@
+	go fmt $@
+
+.PHONY: hydra/api/hydra-api.yaml
+hydra/api/hydra-api.yaml:
+	mkdir -p $(shell dirname $@)
+	curl https://raw.githubusercontent.com/NixOS/hydra/master/hydra-api.yaml > $@
 
 # TODO
 # test:

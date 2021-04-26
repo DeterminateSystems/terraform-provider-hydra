@@ -6,5 +6,7 @@ pkgs.mkShell {
   buildInputs = with pkgs; [
     go
     terraform_0_14
+    curl
+    oapi-codegen
   ];
 }
