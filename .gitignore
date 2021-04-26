@@ -2,7 +2,7 @@
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.*
-
+crash.log
 terraform-provider-hydra
 
 # ignore vendor for now
