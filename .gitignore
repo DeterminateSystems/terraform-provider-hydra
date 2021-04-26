@@ -1,0 +1,9 @@
+**/.terraform/*
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+
+terraform-provider-hydra
+
+# ignore vendor for now
+/vendor
