@@ -56,3 +56,21 @@ resource "hydra_jobset" "trunk" {
     notify_committers = false
   }
 }
+
+resource "hydra_jobset" "trunk-flake" {
+  project     = hydra_project.nixpkgs.name
+  state       = "enabled"
+  visible     = true
+  name        = "trunk-flake"
+  type        = "flake"
+  description = "master branch"
+
+  flake_uri = "github:NixOS/nixpkgs/master"
+
+  check_interval    = 21600
+  scheduling_shares = 3000
+
+  email_notifications = true
+  email_override      = "example@example.com"
+  keep_evaluations    = 3
+}

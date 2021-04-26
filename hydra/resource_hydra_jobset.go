@@ -49,19 +49,26 @@ func resourceHydraJobset() *schema.Resource {
 				Description:  "Type of jobset.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"legacy"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"legacy", "flake"}, false),
 			},
 			"description": {
 				Description: "Description of the jobset.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"flake_uri": {
+				Description:   "(Mandatory when the `type` is `flake`, otherwise prohibited.) The jobset's flake URI.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"nix_expression"},
+			},
 			"nix_expression": {
-				Description: "The jobset's Nix expression.",
-				Type:        schema.TypeSet,
-				Required:    true,
-				MaxItems:    1,
-				MinItems:    1,
+				Description:   "(Mandatory when the `type` is `legacy`, otherwise prohibited.) The jobset's entrypoint Nix expression. The `file` must exist in an input, matching the `in` name.",
+				Type:          schema.TypeSet,
+				Optional:      true,
+				ConflictsWith: []string{"flake_uri"},
+				MaxItems:      1,
+				MinItems:      1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"file": {
@@ -76,7 +83,7 @@ func resourceHydraJobset() *schema.Resource {
 				},
 			},
 			"check_interval": {
-				Description: "How frequently to check the jobset.",
+				Description: "How frequently to check the jobset in seconds.",
 				Type:        schema.TypeInt,
 				Required:    true,
 			},
@@ -148,6 +155,7 @@ func resourceHydraJobset() *schema.Resource {
 
 func resourceHydraJobsetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	// TODO: type flake and nix_expression are mutually exclusive
+	// TODO: type legacy and flake_uri are mutually exclusive
 	return diag.Errorf("not implemented")
 }
 
