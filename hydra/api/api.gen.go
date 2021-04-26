@@ -378,6 +378,9 @@ type PostLoginJSONBody struct {
 // PutProjectIdJSONBody defines parameters for PutProjectId.
 type PutProjectIdJSONBody struct {
 
+	// description of the project
+	Description *string `json:"description,omitempty"`
+
 	// name of the project
 	Displayname *string `json:"displayname,omitempty"`
 
@@ -386,6 +389,12 @@ type PutProjectIdJSONBody struct {
 
 	// when set to true the project is displayed in the web interface
 	Hidden *bool `json:"hidden,omitempty"`
+
+	// homepage of the project
+	Homepage *string `json:"homepage,omitempty"`
+
+	// owner of the project
+	Owner *string `json:"owner,omitempty"`
 }
 
 // GetSearchParams defines parameters for GetSearch.
@@ -1912,6 +1921,11 @@ type PutProjectIdResponse struct {
 		// URL of the created project
 		Uri *string `json:"uri,omitempty"`
 	}
+	JSON400 *struct {
+
+		// error message
+		Error *string `json:"error,omitempty"`
+	}
 	JSON403 *struct {
 
 		// error message
@@ -2507,6 +2521,17 @@ func ParsePutProjectIdResponse(rsp *http.Response) (*PutProjectIdResponse, error
 			return nil, err
 		}
 		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+
+			// error message
+			Error *string `json:"error,omitempty"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
 		var dest struct {

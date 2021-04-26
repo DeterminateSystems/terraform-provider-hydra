@@ -18,10 +18,10 @@ resource "hydra_project" "nixpkgs" {
   display_name = "Nixpkgs"
   description  = "Nix Packages collection"
   homepage     = "http://nixos.org/nixpkgs"
-  owner        = "eelco"
+  owner        = "alice"
   # TODO: declarative configuration
   enabled = true
-  visible = false
+  hidden  = false
 }
 
 resource "hydra_jobset" "trunk" {
