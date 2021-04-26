@@ -384,7 +384,7 @@ type PutProjectIdJSONBody struct {
 	// description of the project
 	Description *string `json:"description,omitempty"`
 
-	// name of the project
+	// display name of the project
 	Displayname *string `json:"displayname,omitempty"`
 
 	// when set to true the project gets scheduled for evaluation
@@ -392,6 +392,9 @@ type PutProjectIdJSONBody struct {
 
 	// homepage of the project
 	Homepage *string `json:"homepage,omitempty"`
+
+	// name of the project
+	Name *string `json:"name,omitempty"`
 
 	// owner of the project
 	Owner *string `json:"owner,omitempty"`
