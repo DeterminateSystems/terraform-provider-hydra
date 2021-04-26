@@ -2,9 +2,12 @@ package hydra
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"terraform-provider-hydra/hydra/api"
 )
 
 func resourceHydraProject() *schema.Resource {
@@ -49,18 +52,81 @@ func resourceHydraProject() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
-			"visible": {
-				Description: "Whether or not the project is visible.",
+			"hidden": {
+				Description: "Whether or not the project is hidden.",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Default:     false,
 			},
 		},
 	}
 }
 
 func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	client := m.(*api.ClientWithResponses)
+
+	var diags diag.Diagnostics
+
+	name := d.Get("name").(string)
+
+	get, err := client.GetProjectIdWithResponse(ctx, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	defer get.HTTPResponse.Body.Close()
+
+	// Check to make sure the project doesn't yet exist
+	if get.HTTPResponse.StatusCode != http.StatusNotFound {
+		return append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Failed to create Project",
+			Detail:   "Project already exists.",
+		})
+	}
+
+	// Now that we're sure the project doesn't exist, we can continue creating it
+	display_name := d.Get("display_name").(string)
+	description := d.Get("description").(string)
+	homepage := d.Get("homepage").(string)
+	owner := d.Get("owner").(string)
+	enabled := d.Get("enabled").(bool)
+	hidden := d.Get("hidden").(bool)
+
+	body := api.PutProjectIdJSONRequestBody{
+		Displayname: &display_name,
+		Description: &description,
+		Homepage:    &homepage,
+		Owner:       &owner,
+		Enabled:     &enabled,
+		Hidden:      &hidden,
+	}
+
+	put, err := client.PutProjectIdWithResponse(ctx, name, body)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	defer put.HTTPResponse.Body.Close()
+
+	// This should never happen (we login during the provider setup)
+	if put.JSON403 != nil {
+		return append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Failed to create Project",
+			Detail:   *put.JSON403.Error,
+		})
+	}
+
+	if put.JSON201 == nil {
+		return append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Failed to create Project",
+			Detail:   "Expected successful project creation, got nil.",
+		})
+	}
+
+	d.SetId(name)
+
+	return diags
 }
 
 func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
