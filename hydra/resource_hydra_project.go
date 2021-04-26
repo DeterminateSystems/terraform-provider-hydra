@@ -172,7 +172,7 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 }
 
 func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	return resourceHydraProjectRead(ctx, d, m)
 }
 
 func resourceHydraProjectDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
