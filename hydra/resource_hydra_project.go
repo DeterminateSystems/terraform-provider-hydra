@@ -62,10 +62,30 @@ func resourceHydraProject() *schema.Resource {
 	}
 }
 
-func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := m.(*api.ClientWithResponses)
+func checkPutProjectId(put *api.PutProjectIdResponse, summary string) diag.Diagnostics {
+	// This should never happen (we login during the provider setup)
+	if put.JSON403 != nil {
+		return []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  summary,
+			Detail:   *put.JSON403.Error,
+		}}
+	}
 
-	var diags diag.Diagnostics
+	if put.JSON400 != nil {
+		return []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  summary,
+			Detail:   *put.JSON400.Error,
+		}}
+	}
+
+	return nil
+}
+
+func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	errsummary := "Failed to create project"
+	client := m.(*api.ClientWithResponses)
 
 	name := d.Get("name").(string)
 
@@ -77,11 +97,11 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	// Check to make sure the project doesn't yet exist
 	if get.HTTPResponse.StatusCode != http.StatusNotFound {
-		return append(diags, diag.Diagnostic{
+		return []diag.Diagnostic{{
 			Severity: diag.Error,
-			Summary:  "Failed to create Project",
+			Summary:  errsummary,
 			Detail:   "Project already exists.",
-		})
+		}}
 	}
 
 	// Now that we're sure the project doesn't exist, we can continue creating it
@@ -107,32 +127,26 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 	}
 	defer put.HTTPResponse.Body.Close()
 
-	// This should never happen (we login during the provider setup)
-	if put.JSON403 != nil {
-		return append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Failed to create Project",
-			Detail:   *put.JSON403.Error,
-		})
+	if err := checkPutProjectId(put, errsummary); err != nil {
+		return err
 	}
 
 	if put.JSON201 == nil {
-		return append(diags, diag.Diagnostic{
+		return []diag.Diagnostic{{
 			Severity: diag.Error,
-			Summary:  "Failed to create Project",
-			Detail:   "Expected successful project creation, got nil.",
-		})
+			Summary:  errsummary,
+			Detail:   "Expected project response, got nil.",
+		}}
 	}
 
 	d.SetId(name)
 
-	return diags
+	return nil
 }
 
 func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	errsummary := "Failed to read Project"
 	client := m.(*api.ClientWithResponses)
-
-	var diags diag.Diagnostics
 
 	name := d.Id()
 
@@ -150,11 +164,11 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 	// Check to make sure the project exists
 	if get.HTTPResponse.StatusCode != http.StatusOK {
 		d.SetId("")
-		return append(diags, diag.Diagnostic{
+		return []diag.Diagnostic{{
 			Severity: diag.Error,
-			Summary:  "Failed to read Project",
+			Summary:  errsummary,
 			Detail:   "Project does not exist.",
-		})
+		}}
 	}
 
 	project := get.JSON200
@@ -168,7 +182,7 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("visible", !(*project.Hidden))
 	d.SetId(*project.Name)
 
-	return diags
+	return nil
 }
 
 func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
