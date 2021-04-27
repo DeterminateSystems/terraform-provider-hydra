@@ -59,8 +59,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	c, err := api.NewClientWithResponses(host, func(c *api.Client) error {
 		c.Client = client
-		c.RequestEditors = []api.RequestEditorFn{
-			// Set JSON for all requests
+		// Set JSON for all requests
+		c.RequestEditors = append(c.RequestEditors,
 			func(ctx context.Context, req *http.Request) error {
 				req.Header.Add("Accept", "application/json")
 				req.Header.Add("Content-Type", "application/json")
