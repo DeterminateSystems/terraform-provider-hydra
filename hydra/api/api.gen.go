@@ -1939,7 +1939,7 @@ type DeleteProjectIdResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *struct {
 
-		// url of the Hydra instance
+		// root of the Hydra instance
 		Redirect *string `json:"redirect,omitempty"`
 	}
 	JSON404 *Error
@@ -2555,7 +2555,7 @@ func ParseDeleteProjectIdResponse(rsp *http.Response) (*DeleteProjectIdResponse,
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest struct {
 
-			// url of the Hydra instance
+			// root of the Hydra instance
 			Redirect *string `json:"redirect,omitempty"`
 		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
