@@ -65,8 +65,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 				req.Header.Add("Accept", "application/json")
 				req.Header.Add("Content-Type", "application/json")
 				return nil
-			},
-		}
+			})
 		return nil
 	})
 	if err != nil {
