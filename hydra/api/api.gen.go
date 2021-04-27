@@ -791,6 +791,9 @@ type ClientInterface interface {
 
 	PostLogin(ctx context.Context, body PostLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteProjectId request
+	DeleteProjectId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetProjectId request
 	GetProjectId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -937,6 +940,18 @@ func (c *Client) PostLoginWithBody(ctx context.Context, contentType string, body
 
 func (c *Client) PostLogin(ctx context.Context, body PostLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostLoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteProjectId(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteProjectIdRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1408,6 +1423,40 @@ func NewPostLoginRequestWithBody(server string, contentType string, body io.Read
 	return req, nil
 }
 
+// NewDeleteProjectIdRequest generates requests for DeleteProjectId
+func NewDeleteProjectIdRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/project/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = operationPath[1:]
+	}
+	operationURL := url.URL{
+		Path: operationPath,
+	}
+
+	queryURL := serverURL.ResolveReference(&operationURL)
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetProjectIdRequest generates requests for GetProjectId
 func NewGetProjectIdRequest(server string, id string) (*http.Request, error) {
 	var err error
@@ -1612,6 +1661,9 @@ type ClientWithResponsesInterface interface {
 	PostLoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostLoginResponse, error)
 
 	PostLoginWithResponse(ctx context.Context, body PostLoginJSONRequestBody, reqEditors ...RequestEditorFn) (*PostLoginResponse, error)
+
+	// DeleteProjectId request
+	DeleteProjectIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteProjectIdResponse, error)
 
 	// GetProjectId request
 	GetProjectIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetProjectIdResponse, error)
@@ -1882,6 +1934,33 @@ func (r PostLoginResponse) StatusCode() int {
 	return 0
 }
 
+type DeleteProjectIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+
+		// url of the Hydra instance
+		Redirect *string `json:"redirect,omitempty"`
+	}
+	JSON404 *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteProjectIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteProjectIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetProjectIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2086,6 +2165,15 @@ func (c *ClientWithResponses) PostLoginWithResponse(ctx context.Context, body Po
 		return nil, err
 	}
 	return ParsePostLoginResponse(rsp)
+}
+
+// DeleteProjectIdWithResponse request returning *DeleteProjectIdResponse
+func (c *ClientWithResponses) DeleteProjectIdWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeleteProjectIdResponse, error) {
+	rsp, err := c.DeleteProjectId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteProjectIdResponse(rsp)
 }
 
 // GetProjectIdWithResponse request returning *GetProjectIdResponse
@@ -2444,6 +2532,43 @@ func ParsePostLoginResponse(rsp *http.Response) (*PostLoginResponse, error) {
 			return nil, err
 		}
 		response.JSON403 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteProjectIdResponse parses an HTTP response from a DeleteProjectIdWithResponse call
+func ParseDeleteProjectIdResponse(rsp *http.Response) (*DeleteProjectIdResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteProjectIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+
+			// url of the Hydra instance
+			Redirect *string `json:"redirect,omitempty"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
