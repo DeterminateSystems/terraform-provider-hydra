@@ -53,6 +53,27 @@ func TestAccHydraProject_basic(t *testing.T) {
 	})
 }
 
+func TestAccHydraProject_hiddenDisabled(t *testing.T) {
+	// identifier must start with a letter
+	name := fmt.Sprintf("p%s", acctest.RandString(7))
+	resourceName := "hydra_project.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckHydraProjectDestroy,
+		Steps: []resource.TestStep{
+			// Test creation of project
+			{
+				Config: testAccHydraProjectConfigHiddenDisabled(name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckProjectExists(resourceName),
+				),
+			},
+		},
+	})
+}
+
 // testAccCheckExampleResourceDestroy verifies the Project has been destroyed
 func testAccCheckHydraProjectDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*api.ClientWithResponses)
@@ -78,6 +99,20 @@ func testAccCheckHydraProjectDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func testAccHydraProjectConfigHiddenDisabled(name string) string {
+	return fmt.Sprintf(`
+resource "hydra_project" "test" {
+  name         = "%s"
+  display_name = "Nixpkgs"
+  description  = "Nix Packages collection"
+  homepage     = "http://nixos.org/nixpkgs"
+  owner        = "%s"
+  enabled = false
+  visible = false
+}
+`, name, os.Getenv("HYDRA_USERNAME"))
 }
 
 func testAccHydraProjectConfigBasic(name string) string {
