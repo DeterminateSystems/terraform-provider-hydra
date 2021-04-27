@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"golang.org/x/net/publicsuffix"
@@ -56,6 +57,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	client := &http.Client{Jar: jar}
+	client.Transport = logging.NewTransport(
+		"DeterminateSystems/terraform-provider-hydra",
+		http.DefaultTransport,
+	)
 
 	c, err := api.NewClientWithResponses(host, func(c *api.Client) error {
 		c.Client = client
