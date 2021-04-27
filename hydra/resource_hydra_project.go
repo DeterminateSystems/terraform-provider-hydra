@@ -2,6 +2,7 @@ package hydra
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -18,6 +19,9 @@ func resourceHydraProject() *schema.Resource {
 		ReadContext:   resourceHydraProjectRead,
 		UpdateContext: resourceHydraProjectUpdate,
 		DeleteContext: resourceHydraProjectDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -52,20 +56,19 @@ func resourceHydraProject() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
-			"hidden": {
-				Description: "Whether or not the project is hidden.",
+			"visible": {
+				Description: "Whether or not the project is visible.",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
+				Default:     true,
 			},
 		},
 	}
 }
 
 func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	errsummary := "Failed to create project"
 	client := m.(*api.ClientWithResponses)
-
-	var diags diag.Diagnostics
 
 	name := d.Get("name").(string)
 
@@ -77,11 +80,11 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	// Check to make sure the project doesn't yet exist
 	if get.HTTPResponse.StatusCode != http.StatusNotFound {
-		return append(diags, diag.Diagnostic{
+		return []diag.Diagnostic{{
 			Severity: diag.Error,
-			Summary:  "Failed to create Project",
+			Summary:  errsummary,
 			Detail:   "Project already exists.",
-		})
+		}}
 	}
 
 	// Now that we're sure the project doesn't exist, we can continue creating it
@@ -90,7 +93,7 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 	homepage := d.Get("homepage").(string)
 	owner := d.Get("owner").(string)
 	enabled := d.Get("enabled").(bool)
-	hidden := d.Get("hidden").(bool)
+	visible := d.Get("visible").(bool)
 
 	body := api.PutProjectIdJSONRequestBody{
 		Displayname: &display_name,
@@ -98,7 +101,7 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 		Homepage:    &homepage,
 		Owner:       &owner,
 		Enabled:     &enabled,
-		Hidden:      &hidden,
+		Visible:     &visible,
 	}
 
 	put, err := client.PutProjectIdWithResponse(ctx, name, body)
@@ -107,36 +110,129 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 	}
 	defer put.HTTPResponse.Body.Close()
 
-	// This should never happen (we login during the provider setup)
-	if put.JSON403 != nil {
-		return append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Failed to create Project",
-			Detail:   *put.JSON403.Error,
-		})
-	}
-
+	// If we didn't get the expected response, show what went wrong
 	if put.JSON201 == nil {
-		return append(diags, diag.Diagnostic{
+		return []diag.Diagnostic{{
 			Severity: diag.Error,
-			Summary:  "Failed to create Project",
-			Detail:   "Expected successful project creation, got nil.",
-		})
+			Summary:  errsummary,
+			Detail: fmt.Sprintf("Expected valid project creation response, got %s:\n    %s",
+				put.Status(), string(put.Body)),
+		}}
 	}
 
 	d.SetId(name)
 
-	return diags
+	return nil
 }
 
 func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	errsummary := "Failed to read Project"
+	client := m.(*api.ClientWithResponses)
+
+	name := d.Id()
+
+	get, err := client.GetProjectIdWithResponse(ctx, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	defer get.HTTPResponse.Body.Close()
+
+	// Check to make sure the project exists
+	if get.HTTPResponse.StatusCode != http.StatusOK {
+		d.SetId("")
+		return []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  errsummary,
+			Detail: fmt.Sprintf("Expected valid response from existing project, got %s:\n    %s",
+				get.Status(), string(get.Body)),
+		}}
+	}
+
+	project := get.JSON200
+
+	d.Set("name", *project.Name)
+	d.Set("display_name", *project.Displayname)
+	d.Set("description", *project.Description)
+	d.Set("homepage", *project.Homepage)
+	d.Set("owner", *project.Owner)
+	d.Set("enabled", *project.Enabled)
+	d.Set("visible", !(*project.Hidden))
+	d.SetId(*project.Name)
+
+	return nil
 }
 
 func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	errsummary := "Failed to update Project"
+	client := m.(*api.ClientWithResponses)
+
+	id := d.Id()
+	name := d.Get("name").(string)
+	display_name := d.Get("display_name").(string)
+	description := d.Get("description").(string)
+	homepage := d.Get("homepage").(string)
+	owner := d.Get("owner").(string)
+	enabled := d.Get("enabled").(bool)
+	visible := d.Get("visible").(bool)
+
+	body := api.PutProjectIdJSONRequestBody{
+		Name:        &name,
+		Displayname: &display_name,
+		Description: &description,
+		Homepage:    &homepage,
+		Owner:       &owner,
+		Enabled:     &enabled,
+		Visible:     &visible,
+	}
+
+	// Send the PUT request to the soon-to-be old project name using the resource's ID
+	put, err := client.PutProjectIdWithResponse(ctx, id, body)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	defer put.HTTPResponse.Body.Close()
+
+	// If we didn't get the expected response, show what went wrong
+	if put.JSON200 == nil {
+		return []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  errsummary,
+			Detail: fmt.Sprintf("Expected valid response from existing project, got %s:\n    %s",
+				put.Status(), string(put.Body)),
+		}}
+	}
+
+	if d.HasChange("name") {
+		d.SetId(name)
+	}
+
+	// Ensure we can still read the Project
+	return resourceHydraProjectRead(ctx, d, m)
 }
 
 func resourceHydraProjectDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	errsummary := "Failed to delete Project"
+	client := m.(*api.ClientWithResponses)
+
+	id := d.Id()
+
+	del, err := client.DeleteProjectIdWithResponse(ctx, id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	defer del.HTTPResponse.Body.Close()
+
+	// Check to make sure the project was actually deleted
+	if del.HTTPResponse.StatusCode != http.StatusOK {
+		return []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  errsummary,
+			Detail: fmt.Sprintf("Expected valid project deletion response, got %s:\n    %s",
+				del.Status(), string(del.Body)),
+		}}
+	}
+
+	d.SetId("")
+
+	return nil
 }

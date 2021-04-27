@@ -160,8 +160,11 @@ paths:
             schema:
               type: object
               properties:
-                displayname:
+                name:
                   description: name of the project
+                  type: string
+                displayname:
+                  description: display name of the project
                   type: string
                 description:
                   description: description of the project
@@ -175,7 +178,7 @@ paths:
                 enabled:
                   description: when set to true the project gets scheduled for evaluation
                   type: boolean
-                hidden:
+                visible:
                   description: when set to true the project is displayed in the web interface
                   type: boolean
       responses:
@@ -248,6 +251,33 @@ paths:
               examples:
                 project-success:
                   $ref: '#/components/examples/project-success'
+        '404':
+          description: project could not be found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Deletes a project
+      parameters:
+        - name: id
+          in: path
+          description: project identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: project deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirect:
+                    type: string
+                    description: url of the Hydra instance
         '404':
           description: project could not be found
           content:
@@ -532,6 +562,9 @@ components:
           type: string
         description:
           description: description of the project
+          type: string
+        homepage:
+          description: homepage of the project
           type: string
         hidden:
           description: when set to true the project is not displayed in the web interface
