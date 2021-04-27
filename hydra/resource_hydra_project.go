@@ -19,6 +19,9 @@ func resourceHydraProject() *schema.Resource {
 		ReadContext:   resourceHydraProjectRead,
 		UpdateContext: resourceHydraProjectUpdate,
 		DeleteContext: resourceHydraProjectDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
