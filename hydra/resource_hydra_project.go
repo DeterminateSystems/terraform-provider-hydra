@@ -209,5 +209,27 @@ func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m i
 }
 
 func resourceHydraProjectDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	errsummary := "Failed to delete Project"
+	client := m.(*api.ClientWithResponses)
+
+	id := d.Id()
+
+	del, err := client.DeleteProjectIdWithResponse(ctx, id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	defer del.HTTPResponse.Body.Close()
+
+	// Check to make sure the project was actually deleted
+	if del.HTTPResponse.StatusCode != http.StatusOK {
+		return []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  errsummary,
+			Detail:   "Project does not exist.",
+		}}
+	}
+
+	d.SetId("")
+
+	return nil
 }
