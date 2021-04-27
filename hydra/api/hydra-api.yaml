@@ -277,7 +277,7 @@ paths:
                 properties:
                   redirect:
                     type: string
-                    description: url of the Hydra instance
+                    description: root of the Hydra instance
         '404':
           description: project could not be found
           content:

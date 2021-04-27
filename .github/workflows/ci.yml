@@ -8,10 +8,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Go environment
-        uses: actions/setup-go@v2.1.3
-        with:
-          go-version: "1.16.2"
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
@@ -21,16 +17,14 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
       - name: Build
-        run: go build ./...
+        run: nix-shell --run 'go build ./...'
 
   format:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Go environment
-        uses: actions/setup-go@v2.1.3
-        with:
-          go-version: "1.16.2"
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
@@ -40,16 +34,18 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
       - name: Check formatting
-        run: if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
+        run: |
+          nix-shell --run '
+            if [ "$(goimports -l . | wc -l)" -gt 0 ]; then
+              exit 1
+            fi'
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Go environment
-        uses: actions/setup-go@v2.1.3
-        with:
-          go-version: ${{ matrix.go-version }}
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
@@ -59,16 +55,14 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
       - name: Test Go
-        run: go test ./...
+        run: nix-shell --run 'go test ./...'
 
   terraform:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Go environment
-        uses: actions/setup-go@v2.1.3
-        with:
-          go-version: "1.16.2"
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
@@ -78,19 +72,15 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - uses: hashicorp/setup-terraform@v1
-      - run: make install
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
+      - run: nix-shell --run 'make install'
       - name: Terraform fmt
-        working-directory: ./examples
-        run: terraform fmt -check
-        continue-on-error: true
+        run: nix-shell --run 'terraform -chdir=./examples fmt -check'
       - name: Terraform init
-        working-directory: ./examples
-        run: terraform init
+        run: nix-shell --run 'terraform -chdir=./examples init'
       - name: Terraform validate
-        working-directory: ./examples
-        run: terraform validate -no-color
+        run: nix-shell --run 'terraform -chdir=./examples validate -no-color'
       # TODO: needs hydra running
       # - name: Terraform plan
-      #   working-directory: ./examples
-      #   run: terraform plan -no-color
+      #   run: nix-shell --run 'terraform -chdir=./examples plan -no-color'
