@@ -156,7 +156,6 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 		return nil
 	})
 	if err != nil {
-		d.SetId("")
 		return diag.FromErr(err)
 	}
 	defer get.HTTPResponse.Body.Close()
