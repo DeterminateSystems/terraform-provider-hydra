@@ -185,6 +185,44 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 }
 
 func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	errsummary := "Failed to update Project"
+	client := m.(*api.ClientWithResponses)
+
+	id := d.Id()
+	name := d.Get("name").(string)
+	display_name := d.Get("display_name").(string)
+	description := d.Get("description").(string)
+	homepage := d.Get("homepage").(string)
+	owner := d.Get("owner").(string)
+	enabled := d.Get("enabled").(bool)
+	visible := d.Get("visible").(bool)
+
+	body := api.PutProjectIdJSONRequestBody{
+		Name:        &name,
+		Displayname: &display_name,
+		Description: &description,
+		Homepage:    &homepage,
+		Owner:       &owner,
+		Enabled:     &enabled,
+		Visible:     &visible,
+	}
+
+	// Send the PUT request to the soon-to-be old project name using the resource's ID
+	put, err := client.PutProjectIdWithResponse(ctx, id, body)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	defer put.HTTPResponse.Body.Close()
+
+	if err := checkPutProjectId(put, errsummary); err != nil {
+		return err
+	}
+
+	if d.HasChange("name") {
+		d.SetId(name)
+	}
+
+	// Ensure we can still read the Project
 	return resourceHydraProjectRead(ctx, d, m)
 }
 
