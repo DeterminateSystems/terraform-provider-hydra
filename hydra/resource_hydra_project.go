@@ -136,11 +136,7 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 
 	name := d.Id()
 
-	get, err := client.GetProjectIdWithResponse(ctx, name, func(ctx context.Context, req *http.Request) error {
-		req.Header.Add("Accept", "application/json")
-		req.Header.Add("Content-Type", "application/json")
-		return nil
-	})
+	get, err := client.GetProjectIdWithResponse(ctx, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
