@@ -100,8 +100,14 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 		Description: &description,
 		Homepage:    &homepage,
 		Owner:       &owner,
-		Enabled:     &enabled,
-		Visible:     &visible,
+	}
+
+	if enabled {
+		body.Enabled = &enabled
+	}
+
+	if visible {
+		body.Visible = &visible
 	}
 
 	put, err := client.PutProjectIdWithResponse(ctx, name, body)
@@ -181,8 +187,14 @@ func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m i
 		Description: &description,
 		Homepage:    &homepage,
 		Owner:       &owner,
-		Enabled:     &enabled,
-		Visible:     &visible,
+	}
+
+	if enabled {
+		body.Enabled = &enabled
+	}
+
+	if visible {
+		body.Visible = &visible
 	}
 
 	// Send the PUT request to the soon-to-be old project name using the resource's ID
