@@ -8,5 +8,7 @@ pkgs.mkShell {
     terraform_0_14
     curl
     oapi-codegen
+    goimports # better than gofmt because it adds missing imports
+    git-absorb
   ];
 }

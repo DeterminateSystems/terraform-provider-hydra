@@ -6,9 +6,9 @@ BINARY=terraform-provider-${NAME}
 VERSION=0.1
 OS_ARCH=linux_amd64
 
-default: api install
+default: install
 
-build:
+build: api
 	go build -o ${BINARY}
 
 release:
@@ -37,7 +37,7 @@ hydra/api/api.gen.go: hydra/api/hydra-api.yaml
 	oapi-codegen \
 		-package api \
 		-generate types,client $< > $@
-	go fmt $@
+	goimports -w $@
 
 .PHONY: hydra/api/hydra-api.yaml
 hydra/api/hydra-api.yaml:
@@ -51,3 +51,7 @@ hydra/api/hydra-api.yaml:
 
 testacc:
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 30s
+
+.PHONY: fmt
+fmt:
+	goimports -w -l .
