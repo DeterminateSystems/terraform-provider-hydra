@@ -167,30 +167,72 @@ type Evaluations struct {
 // Jobset defines model for Jobset.
 type Jobset struct {
 
+	// interval (in seconds) in which to check for evaluation
+	Checkinterval *int `json:"checkinterval,omitempty"`
+
+	// a description of the jobset
+	Description *string `json:"description"`
+
 	// email address to send notices to instead of the package maintainer (can be a comma separated list)
 	Emailoverride *string `json:"emailoverride,omitempty"`
 
-	// when set to true the jobset gets scheduled for evaluation
-	Enabled *bool `json:"enabled,omitempty"`
+	// 0 is disabled, 1 is enabled, 2 is one-shot, and 3 is one-at-a-time
+	Enabled *int `json:"enabled,omitempty"`
+
+	// when true the jobset sends emails when previously-successful builds fail
+	Enableemail *bool `json:"enableemail,omitempty"`
 
 	// contains the stderr output of the nix-instantiate command
-	Errormsg *string `json:"errormsg,omitempty"`
+	Errormsg *string `json:"errormsg"`
+
+	// timestamp associated with errormsg
+	Errortime *int `json:"errortime"`
 
 	// contains the error message when there was a problem fetching sources for a jobset
 	Fetcherrormsg *string `json:"fetcherrormsg"`
 
+	// the flake uri to evaluate
+	Flake *string `json:"flake"`
+
 	// inputs configured for this jobset
-	Jobsetinputs *Jobset_Jobsetinputs `json:"jobsetinputs,omitempty"`
+	Inputs *Jobset_Inputs `json:"inputs,omitempty"`
+
+	// number or evaluations to keep
+	Keepnr *int `json:"keepnr,omitempty"`
+
+	// the last time the evaluator looked at this jobset
+	Lastcheckedtime *int `json:"lastcheckedtime"`
+
+	// the name of the jobset
+	Name *string `json:"name,omitempty"`
 
 	// the name of the jobset input which contains the nixexprpath
-	Nixexprinput *string `json:"nixexprinput,omitempty"`
+	Nixexprinput *string `json:"nixexprinput"`
 
 	// the path to the file to evaluate
 	Nixexprpath *string `json:"nixexprpath"`
+
+	// the project this jobset belongs to
+	Project *string `json:"project,omitempty"`
+
+	// how many shares to be allocated to the jobset
+	Schedulingshares *int `json:"schedulingshares,omitempty"`
+
+	// set to the time the latest evaluation started (if one is currently running)
+	Startime *int `json:"startime"`
+
+	// set to the time we were triggered by a push event
+	Triggertime *int `json:"triggertime"`
+
+	// the type of the jobset
+	Type *int `json:"type,omitempty"`
+
+	// when true the jobset is visible in the web frontend
+	Visible *bool `json:"visible,omitempty"`
 }
 
 // inputs configured for this jobset
-type Jobset_Jobsetinputs struct {
+type Jobset_Inputs struct {
 	AdditionalProperties map[string]JobsetInput `json:"-"`
 }
 
@@ -233,8 +275,17 @@ type JobsetEvalInput struct {
 // JobsetInput defines model for JobsetInput.
 type JobsetInput struct {
 
-	// ???
-	Jobsetinputalts *[]string `json:"jobsetinputalts,omitempty"`
+	// whether or not to email responsible parties
+	Emailresponsible *bool `json:"emailresponsible,omitempty"`
+
+	// name of the input
+	Name *string `json:"name,omitempty"`
+
+	// type of input
+	Type *string `json:"type,omitempty"`
+
+	// value of the input
+	Value *string `json:"value,omitempty"`
 }
 
 // JobsetOverview defines model for JobsetOverview.
@@ -336,37 +387,7 @@ type PutApiPushParams struct {
 }
 
 // PutJobsetProjectIdJobsetIdJSONBody defines parameters for PutJobsetProjectIdJobsetId.
-type PutJobsetProjectIdJobsetIdJSONBody struct {
-
-	// interval (in seconds) in which to check for evaluation
-	Checkinterval *int `json:"checkinterval,omitempty"`
-
-	// a description of the jobset
-	Description *string `json:"description,omitempty"`
-
-	// when true the jobset gets scheduled for evaluation
-	Enabled *bool `json:"enabled,omitempty"`
-
-	// inputs for this jobset
-	Inputs *PutJobsetProjectIdJobsetIdJSONBody_Inputs `json:"inputs,omitempty"`
-
-	// number or evaluations to keep
-	Keepnr *int `json:"keepnr,omitempty"`
-
-	// the name of the jobset input which contains the nixexprpath
-	Nixexprinput *string `json:"nixexprinput,omitempty"`
-
-	// the path to the file to evaluate
-	Nixexprpath *string `json:"nixexprpath"`
-
-	// when true the jobset is visible in the web frontend
-	Visible *bool `json:"visible,omitempty"`
-}
-
-// PutJobsetProjectIdJobsetIdJSONBody_Inputs defines parameters for PutJobsetProjectIdJobsetId.
-type PutJobsetProjectIdJobsetIdJSONBody_Inputs struct {
-	AdditionalProperties map[string]JobsetInput `json:"-"`
-}
+type PutJobsetProjectIdJobsetIdJSONBody Jobset
 
 // PostLoginJSONBody defines parameters for PostLogin.
 type PostLoginJSONBody struct {
@@ -418,59 +439,6 @@ type PostLoginJSONRequestBody PostLoginJSONBody
 
 // PutProjectIdJSONRequestBody defines body for PutProjectId for application/json ContentType.
 type PutProjectIdJSONRequestBody PutProjectIdJSONBody
-
-// Getter for additional properties for PutJobsetProjectIdJobsetIdJSONBody_Inputs. Returns the specified
-// element and whether it was found
-func (a PutJobsetProjectIdJobsetIdJSONBody_Inputs) Get(fieldName string) (value JobsetInput, found bool) {
-	if a.AdditionalProperties != nil {
-		value, found = a.AdditionalProperties[fieldName]
-	}
-	return
-}
-
-// Setter for additional properties for PutJobsetProjectIdJobsetIdJSONBody_Inputs
-func (a *PutJobsetProjectIdJobsetIdJSONBody_Inputs) Set(fieldName string, value JobsetInput) {
-	if a.AdditionalProperties == nil {
-		a.AdditionalProperties = make(map[string]JobsetInput)
-	}
-	a.AdditionalProperties[fieldName] = value
-}
-
-// Override default JSON handling for PutJobsetProjectIdJobsetIdJSONBody_Inputs to handle AdditionalProperties
-func (a *PutJobsetProjectIdJobsetIdJSONBody_Inputs) UnmarshalJSON(b []byte) error {
-	object := make(map[string]json.RawMessage)
-	err := json.Unmarshal(b, &object)
-	if err != nil {
-		return err
-	}
-
-	if len(object) != 0 {
-		a.AdditionalProperties = make(map[string]JobsetInput)
-		for fieldName, fieldBuf := range object {
-			var fieldVal JobsetInput
-			err := json.Unmarshal(fieldBuf, &fieldVal)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("error unmarshaling field %s", fieldName))
-			}
-			a.AdditionalProperties[fieldName] = fieldVal
-		}
-	}
-	return nil
-}
-
-// Override default JSON handling for PutJobsetProjectIdJobsetIdJSONBody_Inputs to handle AdditionalProperties
-func (a PutJobsetProjectIdJobsetIdJSONBody_Inputs) MarshalJSON() ([]byte, error) {
-	var err error
-	object := make(map[string]json.RawMessage)
-
-	for fieldName, field := range a.AdditionalProperties {
-		object[fieldName], err = json.Marshal(field)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("error marshaling '%s'", fieldName))
-		}
-	}
-	return json.Marshal(object)
-}
 
 // Getter for additional properties for Build_Buildoutputs. Returns the specified
 // element and whether it was found
@@ -578,25 +546,25 @@ func (a Build_Buildproducts) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
-// Getter for additional properties for Jobset_Jobsetinputs. Returns the specified
+// Getter for additional properties for Jobset_Inputs. Returns the specified
 // element and whether it was found
-func (a Jobset_Jobsetinputs) Get(fieldName string) (value JobsetInput, found bool) {
+func (a Jobset_Inputs) Get(fieldName string) (value JobsetInput, found bool) {
 	if a.AdditionalProperties != nil {
 		value, found = a.AdditionalProperties[fieldName]
 	}
 	return
 }
 
-// Setter for additional properties for Jobset_Jobsetinputs
-func (a *Jobset_Jobsetinputs) Set(fieldName string, value JobsetInput) {
+// Setter for additional properties for Jobset_Inputs
+func (a *Jobset_Inputs) Set(fieldName string, value JobsetInput) {
 	if a.AdditionalProperties == nil {
 		a.AdditionalProperties = make(map[string]JobsetInput)
 	}
 	a.AdditionalProperties[fieldName] = value
 }
 
-// Override default JSON handling for Jobset_Jobsetinputs to handle AdditionalProperties
-func (a *Jobset_Jobsetinputs) UnmarshalJSON(b []byte) error {
+// Override default JSON handling for Jobset_Inputs to handle AdditionalProperties
+func (a *Jobset_Inputs) UnmarshalJSON(b []byte) error {
 	object := make(map[string]json.RawMessage)
 	err := json.Unmarshal(b, &object)
 	if err != nil {
@@ -617,8 +585,8 @@ func (a *Jobset_Jobsetinputs) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Override default JSON handling for Jobset_Jobsetinputs to handle AdditionalProperties
-func (a Jobset_Jobsetinputs) MarshalJSON() ([]byte, error) {
+// Override default JSON handling for Jobset_Inputs to handle AdditionalProperties
+func (a Jobset_Inputs) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
 
@@ -775,6 +743,9 @@ type ClientInterface interface {
 	// GetJobProjectIdJobsetIdJobIdShield request
 	GetJobProjectIdJobsetIdJobIdShield(ctx context.Context, projectId string, jobsetId string, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteJobsetProjectIdJobsetId request
+	DeleteJobsetProjectIdJobsetId(ctx context.Context, projectId string, jobsetId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetJobsetProjectIdJobsetId request
 	GetJobsetProjectIdJobsetId(ctx context.Context, projectId string, jobsetId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -868,6 +839,18 @@ func (c *Client) GetEvalBuildId(ctx context.Context, buildId int, reqEditors ...
 
 func (c *Client) GetJobProjectIdJobsetIdJobIdShield(ctx context.Context, projectId string, jobsetId string, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetJobProjectIdJobsetIdJobIdShieldRequest(c.Server, projectId, jobsetId, jobId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteJobsetProjectIdJobsetId(ctx context.Context, projectId string, jobsetId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteJobsetProjectIdJobsetIdRequest(c.Server, projectId, jobsetId)
 	if err != nil {
 		return nil, err
 	}
@@ -1240,6 +1223,47 @@ func NewGetJobProjectIdJobsetIdJobIdShieldRequest(server string, projectId strin
 	queryURL := serverURL.ResolveReference(&operationURL)
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteJobsetProjectIdJobsetIdRequest generates requests for DeleteJobsetProjectIdJobsetId
+func NewDeleteJobsetProjectIdJobsetIdRequest(server string, projectId string, jobsetId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "project-id", runtime.ParamLocationPath, projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "jobset-id", runtime.ParamLocationPath, jobsetId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/jobset/%s/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = operationPath[1:]
+	}
+	operationURL := url.URL{
+		Path: operationPath,
+	}
+
+	queryURL := serverURL.ResolveReference(&operationURL)
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1646,6 +1670,9 @@ type ClientWithResponsesInterface interface {
 	// GetJobProjectIdJobsetIdJobIdShield request
 	GetJobProjectIdJobsetIdJobIdShieldWithResponse(ctx context.Context, projectId string, jobsetId string, jobId string, reqEditors ...RequestEditorFn) (*GetJobProjectIdJobsetIdJobIdShieldResponse, error)
 
+	// DeleteJobsetProjectIdJobsetId request
+	DeleteJobsetProjectIdJobsetIdWithResponse(ctx context.Context, projectId string, jobsetId string, reqEditors ...RequestEditorFn) (*DeleteJobsetProjectIdJobsetIdResponse, error)
+
 	// GetJobsetProjectIdJobsetId request
 	GetJobsetProjectIdJobsetIdWithResponse(ctx context.Context, projectId string, jobsetId string, reqEditors ...RequestEditorFn) (*GetJobsetProjectIdJobsetIdResponse, error)
 
@@ -1806,6 +1833,33 @@ func (r GetJobProjectIdJobsetIdJobIdShieldResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetJobProjectIdJobsetIdJobIdShieldResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteJobsetProjectIdJobsetIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+
+		// root of the Hydra instance
+		Redirect *string `json:"redirect,omitempty"`
+	}
+	JSON404 *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteJobsetProjectIdJobsetIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteJobsetProjectIdJobsetIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2115,6 +2169,15 @@ func (c *ClientWithResponses) GetJobProjectIdJobsetIdJobIdShieldWithResponse(ctx
 	return ParseGetJobProjectIdJobsetIdJobIdShieldResponse(rsp)
 }
 
+// DeleteJobsetProjectIdJobsetIdWithResponse request returning *DeleteJobsetProjectIdJobsetIdResponse
+func (c *ClientWithResponses) DeleteJobsetProjectIdJobsetIdWithResponse(ctx context.Context, projectId string, jobsetId string, reqEditors ...RequestEditorFn) (*DeleteJobsetProjectIdJobsetIdResponse, error) {
+	rsp, err := c.DeleteJobsetProjectIdJobsetId(ctx, projectId, jobsetId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteJobsetProjectIdJobsetIdResponse(rsp)
+}
+
 // GetJobsetProjectIdJobsetIdWithResponse request returning *GetJobsetProjectIdJobsetIdResponse
 func (c *ClientWithResponses) GetJobsetProjectIdJobsetIdWithResponse(ctx context.Context, projectId string, jobsetId string, reqEditors ...RequestEditorFn) (*GetJobsetProjectIdJobsetIdResponse, error) {
 	rsp, err := c.GetJobsetProjectIdJobsetId(ctx, projectId, jobsetId, reqEditors...)
@@ -2371,6 +2434,43 @@ func ParseGetJobProjectIdJobsetIdJobIdShieldResponse(rsp *http.Response) (*GetJo
 	}
 
 	switch {
+	}
+
+	return response, nil
+}
+
+// ParseDeleteJobsetProjectIdJobsetIdResponse parses an HTTP response from a DeleteJobsetProjectIdJobsetIdWithResponse call
+func ParseDeleteJobsetProjectIdJobsetIdResponse(rsp *http.Response) (*DeleteJobsetProjectIdJobsetIdResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteJobsetProjectIdJobsetIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+
+			// root of the Hydra instance
+			Redirect *string `json:"redirect,omitempty"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil

@@ -37,7 +37,7 @@ resource "hydra_jobset" "trunk" {
     in   = "nixpkgs"
   }
 
-  check_interval    = 21600
+  check_interval    = 0
   scheduling_shares = 3000
 
   email_notifications = true
