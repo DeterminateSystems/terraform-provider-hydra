@@ -50,7 +50,7 @@ hydra/api/hydra-api.yaml:
 # 	echo $(TEST) | xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
 
 testacc:
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 30s
+	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 10m
 
 .PHONY: fmt
 fmt:
