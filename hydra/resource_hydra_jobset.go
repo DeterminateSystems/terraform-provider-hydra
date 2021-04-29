@@ -389,7 +389,10 @@ func resourceHydraJobsetRead(ctx context.Context, d *schema.ResourceData, m inte
 	d.Set("keep_evaluations", *jobset.Keepnr)
 	d.Set("visible", *jobset.Visible)
 	d.Set("email_notifications", *jobset.Enableemail)
-	d.Set("email_override", *jobset.Emailoverride)
+
+	if *jobset.Emailoverride != "" {
+		d.Set("email_override", *jobset.Emailoverride)
+	}
 
 	if jobset.Nixexprinput != nil && jobset.Nixexprpath != nil {
 		nix_expression := schema.NewSet(schema.HashResource(nixExprSchema()), []interface{}{
