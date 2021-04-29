@@ -586,20 +586,23 @@ func resourceHydraJobsetDelete(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func flattenInputs(in map[string]api.JobsetInput) []interface{} {
-	out := make([]interface{}, len(in), len(in))
-	props := make(map[string]interface{})
-	keys := make([]string, len(in))
+	out := make([]interface{}, 0, len(in))
+	keys := make([]string, 0, len(in))
 
 	for k, _ := range in {
+		log.Printf("[DEBUG] key:%s", k)
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		props["name"] = in[k].Name
-		props["notify_committers"] = in[k].Emailresponsible
-		props["type"] = in[k].Type
-		props["value"] = in[k].Value
-		out = append(out, props[k])
+		props := make(map[string]interface{})
+
+		log.Printf("[DEBUG] %s", k)
+		props["name"] = *in[k].Name
+		props["notify_committers"] = *in[k].Emailresponsible
+		props["type"] = *in[k].Type
+		props["value"] = *in[k].Value
+		out = append(out, props)
 	}
 
 	return out
