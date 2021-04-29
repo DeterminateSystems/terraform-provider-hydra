@@ -37,7 +37,7 @@ resource "hydra_jobset" "trunk" {
     in   = "nixpkgs"
   }
 
-  check_interval    = 21600
+  check_interval    = 0
   scheduling_shares = 3000
 
   email_notifications = true
@@ -53,7 +53,7 @@ resource "hydra_jobset" "trunk" {
 
   input {
     name              = "officialRelease"
-    type              = "bool"
+    type              = "boolean"
     value             = "false"
     notify_committers = false
   }
@@ -69,7 +69,7 @@ resource "hydra_jobset" "trunk-flake" {
 
   flake_uri = "github:NixOS/nixpkgs/master"
 
-  check_interval    = 21600
+  check_interval    = 0
   scheduling_shares = 3000
 
   email_notifications = true
