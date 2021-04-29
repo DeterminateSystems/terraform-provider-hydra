@@ -272,6 +272,14 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 		}}
 	}
 
+	if jobsetType == 1 && flake_uri == "" {
+		return nil, []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  errsummary,
+			Detail:   "Jobset type \"flake\" requires a non-empty flake_uri.",
+		}}
+	}
+
 	if flake_uri != "" {
 		body.Flake = &flake_uri
 	}
@@ -282,6 +290,14 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 			Severity: diag.Error,
 			Summary:  errsummary,
 			Detail:   "You cannot specify a nix_expression when using type \"flake\".",
+		}}
+	}
+
+	if jobsetType == 0 && len(nix_expression.List()) < 1 {
+		return nil, []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  errsummary,
+			Detail:   "Jobset type \"legacy\" requires a non-empty nix_expression.",
 		}}
 	}
 
@@ -301,6 +317,14 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 			Severity: diag.Error,
 			Summary:  errsummary,
 			Detail:   "You cannot specify one or more inputs when using type \"flake\".",
+		}}
+	}
+
+	if jobsetType == 0 && len(input.List()) < 1 {
+		return nil, []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  errsummary,
+			Detail:   "Jobset type \"legacy\" requires non-empty input(s).",
 		}}
 	}
 
