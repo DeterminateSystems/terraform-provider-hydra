@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -587,12 +588,17 @@ func resourceHydraJobsetDelete(ctx context.Context, d *schema.ResourceData, m in
 func flattenInputs(in map[string]api.JobsetInput) []interface{} {
 	out := make([]interface{}, len(in), len(in))
 	props := make(map[string]interface{})
+	keys := make([]string, len(in))
 
-	for k, v := range in {
-		props["name"] = v.Name
-		props["type"] = v.Type
-		props["value"] = v.Value
-		props["notify_committers"] = v.Emailresponsible
+	for k, _ := range in {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		props["name"] = in[k].Name
+		props["notify_committers"] = in[k].Emailresponsible
+		props["type"] = in[k].Type
+		props["value"] = in[k].Value
 		out = append(out, props[k])
 	}
 
