@@ -39,7 +39,7 @@ jobs:
       - name: Check formatting
         run: |
           nix-shell --run '
-            if [ "$(goimports -l . | wc -l)" -gt 0 ]; then
+            if [ "$(goimports -l $(find . -type f -name '*.go' -not -path "./vendor/*") | wc -l)" -gt 0 ]; then
               exit 1
             fi'
 
