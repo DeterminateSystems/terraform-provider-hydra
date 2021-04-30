@@ -10,5 +10,6 @@ pkgs.mkShell {
     oapi-codegen
     goimports # better than gofmt because it adds missing imports
     git-absorb
+    findutils
   ];
 }

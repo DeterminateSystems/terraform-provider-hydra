@@ -54,4 +54,4 @@ testacc:
 
 .PHONY: fmt
 fmt:
-	goimports -w -l .
+	goimports -w -l $(shell find . -type f -name '*.go' -not -path "./vendor/*")

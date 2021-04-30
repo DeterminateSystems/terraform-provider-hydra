@@ -4,6 +4,3 @@
 *.tfstate.*
 crash.log
 terraform-provider-hydra
-
-# ignore vendor for now
-/vendor
