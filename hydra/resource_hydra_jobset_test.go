@@ -49,6 +49,22 @@ func TestAccHydraJobset_basic(t *testing.T) {
 					testAccCheckJobsetExists(resourceName),
 				),
 			},
+			// Test if jobset has all required fields set
+			{
+				Config:      testAccHydraJobsetConfigEmptyNixExpr(name, name),
+				ExpectError: regexp.MustCompile(`Jobset type "legacy" requires a non-empty nix_expression.`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJobsetExists(resourceName),
+				),
+			},
+			// Test if jobset has all required fields set
+			{
+				Config:      testAccHydraJobsetConfigEmptyInputs(name, name),
+				ExpectError: regexp.MustCompile(`Jobset type "legacy" requires non-empty input(s).`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJobsetExists(resourceName),
+				),
+			},
 		},
 	})
 }
@@ -83,6 +99,14 @@ func TestAccHydraJobset_flake(t *testing.T) {
 			{
 				Config:      testAccHydraJobsetConfigFlake(name, badname),
 				ExpectError: regexp.MustCompile("Invalid jobset identifier"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJobsetExists(resourceName),
+				),
+			},
+			// Test if jobset has all required fields set
+			{
+				Config:      testAccHydraJobsetConfigEmptyFlake(name, name),
+				ExpectError: regexp.MustCompile(`Jobset type "flake" requires a non-empty flake_uri.`),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckJobsetExists(resourceName),
 				),
@@ -336,6 +360,110 @@ resource "hydra_jobset" "test-flake" {
 
   email_notifications = true
   email_override      = "example@example.com"
+  keep_evaluations    = 3
+}`, project, os.Getenv("HYDRA_USERNAME"), jobset)
+}
+
+func testAccHydraJobsetConfigEmptyFlake(project string, jobset string) string {
+	return fmt.Sprintf(`
+resource "hydra_project" "test-flake" {
+  name         = "%s"
+  display_name = "Nixpkgs"
+  description  = "Nix Packages set"
+  homepage     = "https://github.com/nixos/nixpkgs"
+  owner        = "%s"
+  enabled = true
+  visible = true
+}
+
+resource "hydra_jobset" "test-flake" {
+  project     = hydra_project.test-flake.name
+  state       = "enabled"
+  visible     = true
+  name        = "%s"
+  type        = "flake"
+  description = "master branch"
+
+  check_interval    = 0
+  scheduling_shares = 3000
+
+  email_notifications = true
+  email_override      = "example@example.com"
+  keep_evaluations    = 3
+}`, project, os.Getenv("HYDRA_USERNAME"), jobset)
+}
+
+func testAccHydraJobsetConfigEmptyNixExpr(project string, jobset string) string {
+	return fmt.Sprintf(`
+resource "hydra_project" "test" {
+  name         = "%s"
+  display_name = "Nixpkgs"
+  description  = "Nix Packages collection"
+  homepage     = "http://nixos.org/nixpkgs"
+  owner        = "%s"
+  enabled = false
+  visible = false
+}
+
+resource "hydra_jobset" "test" {
+  project     = hydra_project.test.name
+  state       = "disabled"
+  visible     = false
+  name        = "%s"
+  type        = "legacy"
+  description = ""
+
+  check_interval    = 0
+  scheduling_shares = 3000
+
+  email_notifications = false
+  keep_evaluations    = 3
+
+  input {
+    name              = "nixpkgs"
+    type              = "git"
+    value             = "https://github.com/NixOS/nixpkgs.git nixpkgs-unstable"
+    notify_committers = false
+  }
+
+  input {
+    name              = "ofborg"
+    type              = "git"
+    value             = "https://github.com/nixos/ofborg.git released"
+    notify_committers = false
+  }
+}`, project, os.Getenv("HYDRA_USERNAME"), jobset)
+}
+
+func testAccHydraJobsetConfigEmptyInputs(project string, jobset string) string {
+	return fmt.Sprintf(`
+resource "hydra_project" "test" {
+  name         = "%s"
+  display_name = "Nixpkgs"
+  description  = "Nix Packages collection"
+  homepage     = "http://nixos.org/nixpkgs"
+  owner        = "%s"
+  enabled = false
+  visible = false
+}
+
+resource "hydra_jobset" "test" {
+  project     = hydra_project.test.name
+  state       = "disabled"
+  visible     = false
+  name        = "%s"
+  type        = "legacy"
+  description = ""
+
+  nix_expression {
+    file = "release.nix"
+    in   = "ofborg"
+  }
+
+  check_interval    = 0
+  scheduling_shares = 3000
+
+  email_notifications = false
   keep_evaluations    = 3
 }`, project, os.Getenv("HYDRA_USERNAME"), jobset)
 }
