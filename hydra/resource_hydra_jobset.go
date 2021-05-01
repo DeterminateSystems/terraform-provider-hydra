@@ -100,7 +100,8 @@ func resourceHydraJobset() *schema.Resource {
 			"description": {
 				Description: "Description of the jobset.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     "Managed by terraform-provider-hydra.",
 			},
 			"flake_uri": {
 				Description:   "(Mandatory when the `type` is `flake`, otherwise prohibited.) The jobset's flake URI.",
