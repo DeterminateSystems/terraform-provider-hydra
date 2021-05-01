@@ -37,7 +37,8 @@ func resourceHydraProject() *schema.Resource {
 			"description": {
 				Description: "Description of the project.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     "Managed by terraform-provider-hydra.",
 			},
 			"homepage": {
 				Description: "Homepage of the project.",
