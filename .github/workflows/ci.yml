@@ -102,6 +102,7 @@ jobs:
       - name: Check vendor is up-to-date
         run: |
           nix-shell --run '
+            go mod tidy
             go mod vendor
             if [ -n "$(git status -s)" ]; then
               exit 1
