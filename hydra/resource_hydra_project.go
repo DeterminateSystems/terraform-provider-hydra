@@ -96,28 +96,9 @@ func resourceHydraProject() *schema.Resource {
 	}
 }
 
-func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	errsummary := "Failed to create project"
-	client := m.(*api.ClientWithResponses)
-
-	name := d.Get("name").(string)
-
-	get, err := client.GetProjectIdWithResponse(ctx, name)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	defer get.HTTPResponse.Body.Close()
-
-	// Check to make sure the project doesn't yet exist
-	if get.HTTPResponse.StatusCode != http.StatusNotFound {
-		return []diag.Diagnostic{{
-			Severity: diag.Error,
-			Summary:  errsummary,
-			Detail:   "Project already exists.",
-		}}
-	}
-
-	// Now that we're sure the project doesn't exist, we can continue creating it
+// Construct a PUT request to the /project/{id} endpoint that can either create
+// a new project or update an existing one.
+func createProjectPutBody(name string, d *schema.ResourceData) *api.PutProjectIdJSONRequestBody {
 	display_name := d.Get("display_name").(string)
 	description := d.Get("description").(string)
 	homepage := d.Get("homepage").(string)
@@ -157,7 +138,34 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 		}
 	}
 
-	put, err := client.PutProjectIdWithResponse(ctx, name, body)
+	return &body
+}
+
+func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	errsummary := "Failed to create project"
+	client := m.(*api.ClientWithResponses)
+
+	name := d.Get("name").(string)
+
+	get, err := client.GetProjectIdWithResponse(ctx, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	defer get.HTTPResponse.Body.Close()
+
+	// Check to make sure the project doesn't yet exist
+	if get.HTTPResponse.StatusCode != http.StatusNotFound {
+		return []diag.Diagnostic{{
+			Severity: diag.Error,
+			Summary:  errsummary,
+			Detail:   "Project already exists.",
+		}}
+	}
+
+	// Now that we're sure the project doesn't exist, we can continue creating it
+	body := createProjectPutBody(name, d)
+
+	put, err := client.PutProjectIdWithResponse(ctx, name, *body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -237,45 +245,10 @@ func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m i
 
 	id := d.Id()
 	name := d.Get("name").(string)
-	display_name := d.Get("display_name").(string)
-	description := d.Get("description").(string)
-	homepage := d.Get("homepage").(string)
-	owner := d.Get("owner").(string)
-	enabled := d.Get("enabled").(bool)
-	visible := d.Get("visible").(bool)
-	declarative := d.Get("declarative").(*schema.Set)
-
-	body := api.PutProjectIdJSONRequestBody{
-		Name:        &name,
-		Displayname: &display_name,
-		Description: &description,
-		Homepage:    &homepage,
-		Owner:       &owner,
-	}
-
-	if enabled {
-		body.Enabled = &enabled
-	}
-
-	if visible {
-		body.Visible = &visible
-	}
-
-	if len(declarative.List()) > 0 {
-		// There will only ever be one declarative block, so it's fine to access the
-		// first (and only) element without precomputing
-		decl := declarative.List()[0].(map[string]interface{})
-		file := decl["file"].(string)
-		inputType := decl["type"].(string)
-		value := decl["value"].(string)
-
-		body.Declfile = &file
-		body.Decltype = &inputType
-		body.Declvalue = &value
-	}
+	body := createProjectPutBody(name, d)
 
 	// Send the PUT request to the soon-to-be old project name using the resource's ID
-	put, err := client.PutProjectIdWithResponse(ctx, id, body)
+	put, err := client.PutProjectIdWithResponse(ctx, id, *body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
