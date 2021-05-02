@@ -13,6 +13,12 @@ resource "hydra_project" "nixpkgs" {
   owner        = "alice"
   enabled      = true
   visible      = true
+
+  declarative {
+    file  = "static-declarative-project/declarative.json"
+    type  = "git"
+    value = "https://github.com/DeterminateSystems/hydra-examples.git main"
+  }
 }
 ```
 
@@ -31,5 +37,13 @@ resource "hydra_project" "nixpkgs" {
 * `enabled` - (Optional) Whether or not the project is enabled.
 
 * `visible` - (Optional) Whether or not the project is visible.
+
+* `declarative` - (Optional) Configuration of the declarative project.
+
+  * `file` - (Required) The file in `value` which contains the declarative spec file. Relative to the root of `input`.
+
+  * `type` - (Required) The type of the declarative input.
+
+  * `value` - (Required) The value of the declarative input.
 
 [Hydra project]: https://github.com/NixOS/hydra/blob/e9a06113c955e457fa59717c4964c302e852ee9b/doc/manual/src/projects.md#creating-and-managing-projects

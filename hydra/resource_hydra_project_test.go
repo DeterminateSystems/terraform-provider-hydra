@@ -74,6 +74,27 @@ func TestAccHydraProject_hiddenDisabled(t *testing.T) {
 	})
 }
 
+func TestAccHydraProject_declarative(t *testing.T) {
+	// identifier must start with a letter
+	name := fmt.Sprintf("p%s", acctest.RandString(7))
+	resourceName := "hydra_project.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckHydraProjectDestroy,
+		Steps: []resource.TestStep{
+			// Test creation of project
+			{
+				Config: testAccHydraProjectConfigDeclarative(name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckProjectExists(resourceName),
+				),
+			},
+		},
+	})
+}
+
 // testAccCheckExampleResourceDestroy verifies the Project has been destroyed
 func testAccCheckHydraProjectDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*api.ClientWithResponses)
@@ -125,6 +146,26 @@ resource "hydra_project" "test" {
   owner        = "%s"
   enabled = true
   visible = true
+}
+`, name, os.Getenv("HYDRA_USERNAME"))
+}
+
+func testAccHydraProjectConfigDeclarative(name string) string {
+	return fmt.Sprintf(`
+resource "hydra_project" "test" {
+  name         = "%s"
+  display_name = "Nixpkgs"
+  description  = "Nix Packages collection"
+  homepage     = "http://nixos.org/nixpkgs"
+  owner        = "%s"
+  enabled      = true
+  visible      = true
+
+  declarative {
+    file  = "static-declarative-project/declarative.json"
+    type  = "git"
+    value = "https://github.com/DeterminateSystems/hydra-examples.git main"
+  }
 }
 `, name, os.Getenv("HYDRA_USERNAME"))
 }

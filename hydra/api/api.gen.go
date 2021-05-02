@@ -139,6 +139,19 @@ type BuildProduct struct {
 	Type *string `json:"type,omitempty"`
 }
 
+// DeclarativeInput defines model for DeclarativeInput.
+type DeclarativeInput struct {
+
+	// The file in `value` which contains the declarative spec file. Relative to the root of `value`.
+	File *string `json:"file,omitempty"`
+
+	// The type of the declarative input.
+	Type *string `json:"type,omitempty"`
+
+	// The value of the declarative input.
+	Value *string `json:"value,omitempty"`
+}
+
 // Error defines model for Error.
 type Error struct {
 
@@ -330,6 +343,7 @@ type JobsetOverview []struct {
 
 // Project defines model for Project.
 type Project struct {
+	Declarative *DeclarativeInput `json:"declarative,omitempty"`
 
 	// description of the project
 	Description *string `json:"description,omitempty"`
@@ -401,6 +415,7 @@ type PostLoginJSONBody struct {
 
 // PutProjectIdJSONBody defines parameters for PutProjectId.
 type PutProjectIdJSONBody struct {
+	Declarative *DeclarativeInput `json:"declarative,omitempty"`
 
 	// description of the project
 	Description *string `json:"description,omitempty"`

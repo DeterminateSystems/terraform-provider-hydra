@@ -11,6 +11,28 @@ import (
 	"terraform-provider-hydra/hydra/api"
 )
 
+func declInputSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"file": {
+				Description: "The file in `value` which contains the declarative spec file. Relative to the root of `input`.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"type": {
+				Description: "The type of the declarative input.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"value": {
+				Description: "The value of the declarative input.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+}
+
 func resourceHydraProject() *schema.Resource {
 	return &schema.Resource{
 		Description: "Resource defining a Hydra project.",
@@ -50,7 +72,6 @@ func resourceHydraProject() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			// TODO: declarative configuration
 			"enabled": {
 				Description: "Whether or not the project is enabled.",
 				Type:        schema.TypeBool,
@@ -62,6 +83,14 @@ func resourceHydraProject() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
+			},
+			"declarative": {
+				Description: "Configuration of the declarative project.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				MinItems:    1,
+				MaxItems:    1,
+				Elem:        declInputSchema(),
 			},
 		},
 	}
@@ -93,22 +122,39 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 	description := d.Get("description").(string)
 	homepage := d.Get("homepage").(string)
 	owner := d.Get("owner").(string)
-	enabled := d.Get("enabled").(bool)
-	visible := d.Get("visible").(bool)
 
 	body := api.PutProjectIdJSONRequestBody{
+		Name:        &name,
 		Displayname: &display_name,
 		Description: &description,
 		Homepage:    &homepage,
 		Owner:       &owner,
 	}
 
+	enabled := d.Get("enabled").(bool)
 	if enabled {
 		body.Enabled = &enabled
 	}
 
+	visible := d.Get("visible").(bool)
 	if visible {
 		body.Visible = &visible
+	}
+
+	declarative := d.Get("declarative").(*schema.Set)
+	if len(declarative.List()) > 0 {
+		// There will only ever be one declarative block, so it's fine to access the
+		// first (and only) element without precomputing
+		decl := declarative.List()[0].(map[string]interface{})
+		file := decl["file"].(string)
+		inputType := decl["type"].(string)
+		value := decl["value"].(string)
+
+		body.Declarative = &api.DeclarativeInput{
+			File:  &file,
+			Type:  &inputType,
+			Value: &value,
+		}
 	}
 
 	put, err := client.PutProjectIdWithResponse(ctx, name, body)
@@ -164,6 +210,22 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("owner", *project.Owner)
 	d.Set("enabled", *project.Enabled)
 	d.Set("visible", !(*project.Hidden))
+
+	if project.Declarative != nil &&
+		(project.Declarative.File != nil && *project.Declarative.File != "") &&
+		(project.Declarative.Type != nil && *project.Declarative.Type != "") &&
+		(project.Declarative.Value != nil && *project.Declarative.Value != "") {
+		declarative := schema.NewSet(schema.HashResource(declInputSchema()), []interface{}{
+			map[string]interface{}{
+				"file":  *project.Declarative.File,
+				"type":  *project.Declarative.Type,
+				"value": *project.Declarative.Value,
+			},
+		})
+
+		d.Set("declarative", declarative)
+	}
+
 	d.SetId(*project.Name)
 
 	return nil
@@ -181,6 +243,7 @@ func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m i
 	owner := d.Get("owner").(string)
 	enabled := d.Get("enabled").(bool)
 	visible := d.Get("visible").(bool)
+	declarative := d.Get("declarative").(*schema.Set)
 
 	body := api.PutProjectIdJSONRequestBody{
 		Name:        &name,
@@ -196,6 +259,19 @@ func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m i
 
 	if visible {
 		body.Visible = &visible
+	}
+
+	if len(declarative.List()) > 0 {
+		// There will only ever be one declarative block, so it's fine to access the
+		// first (and only) element without precomputing
+		decl := declarative.List()[0].(map[string]interface{})
+		file := decl["file"].(string)
+		inputType := decl["type"].(string)
+		value := decl["value"].(string)
+
+		body.Declfile = &file
+		body.Decltype = &inputType
+		body.Declvalue = &value
 	}
 
 	// Send the PUT request to the soon-to-be old project name using the resource's ID
