@@ -229,8 +229,8 @@ resource "hydra_jobset" "test" {
   description = ""
 
   nix_expression {
-    file = "release.nix"
-    in   = "ofborg"
+    file  = "release.nix"
+    input = "ofborg"
   }
 
   check_interval    = 0
@@ -307,8 +307,8 @@ resource "hydra_jobset" "test" {
   description = ""
 
   nix_expression {
-    file = "release.nix"
-    in   = "ofborg"
+    file  = "release.nix"
+    input = "ofborg"
   }
 
   check_interval    = 0
@@ -456,8 +456,8 @@ resource "hydra_jobset" "test" {
   description = ""
 
   nix_expression {
-    file = "release.nix"
-    in   = "ofborg"
+    file  = "release.nix"
+    input = "ofborg"
   }
 
   check_interval    = 0

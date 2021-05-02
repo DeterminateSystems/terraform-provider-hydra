@@ -20,7 +20,7 @@ func nixExprSchema() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"in": {
+			"input": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -110,7 +110,7 @@ func resourceHydraJobset() *schema.Resource {
 				ConflictsWith: []string{"nix_expression"},
 			},
 			"nix_expression": {
-				Description:   "(Mandatory when the `type` is `legacy`, otherwise prohibited.) The jobset's entrypoint Nix expression. The `file` must exist in an input, matching the `in` name.",
+				Description:   "(Mandatory when the `type` is `legacy`, otherwise prohibited.) The jobset's entrypoint Nix expression. The `file` must exist in an input which matches the name specified in `input`.",
 				Type:          schema.TypeSet,
 				Optional:      true,
 				ConflictsWith: []string{"flake_uri"},
@@ -306,7 +306,7 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 		// There will only ever be one nix_expression, so it's fine to access the
 		// first (and only) element without precomputing
 		expr := nix_expression.List()[0].(map[string]interface{})
-		input := expr["in"].(string)
+		input := expr["input"].(string)
 		path := expr["file"].(string)
 		body.Nixexprinput = &input
 		body.Nixexprpath = &path
@@ -482,8 +482,8 @@ func resourceHydraJobsetRead(ctx context.Context, d *schema.ResourceData, m inte
 		(jobsetResponse.Nixexprpath != nil && *jobsetResponse.Nixexprpath != "") {
 		nix_expression := schema.NewSet(schema.HashResource(nixExprSchema()), []interface{}{
 			map[string]interface{}{
-				"in":   *jobsetResponse.Nixexprinput,
-				"file": *jobsetResponse.Nixexprpath,
+				"input": *jobsetResponse.Nixexprinput,
+				"file":  *jobsetResponse.Nixexprpath,
 			},
 		})
 
