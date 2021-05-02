@@ -34,20 +34,25 @@ func inputSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The name of the input.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"type": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The type of the input.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"value": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The value of the input.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"notify_committers": {
-				Type:     schema.TypeBool,
-				Required: true,
+				Description: "Whether or not to notify committers.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 		},
 	}
