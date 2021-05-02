@@ -33,8 +33,8 @@ resource "hydra_jobset" "trunk" {
   description = "master branch"
 
   nix_expression {
-    file = "pkgs/top-level/release.nix"
-    in   = "nixpkgs"
+    file  = "pkgs/top-level/release.nix"
+    input = "nixpkgs"
   }
 
   check_interval    = 0

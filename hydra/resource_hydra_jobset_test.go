@@ -60,7 +60,7 @@ func TestAccHydraJobset_basic(t *testing.T) {
 			// Test if jobset has all required fields set
 			{
 				Config:      testAccHydraJobsetConfigEmptyInputs(name, name),
-				ExpectError: regexp.MustCompile(`Jobset type "legacy" requires non-empty input(s).`),
+				ExpectError: regexp.MustCompile(`Jobset type "legacy" requires non-empty input`),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckJobsetExists(resourceName),
 				),
@@ -229,8 +229,8 @@ resource "hydra_jobset" "test" {
   description = ""
 
   nix_expression {
-    file = "release.nix"
-    in   = "ofborg"
+    file  = "release.nix"
+    input = "ofborg"
   }
 
   check_interval    = 0
@@ -307,8 +307,8 @@ resource "hydra_jobset" "test" {
   description = ""
 
   nix_expression {
-    file = "release.nix"
-    in   = "ofborg"
+    file  = "release.nix"
+    input = "ofborg"
   }
 
   check_interval    = 0
@@ -456,8 +456,8 @@ resource "hydra_jobset" "test" {
   description = ""
 
   nix_expression {
-    file = "release.nix"
-    in   = "ofborg"
+    file  = "release.nix"
+    input = "ofborg"
   }
 
   check_interval    = 0
