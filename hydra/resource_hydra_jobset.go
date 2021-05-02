@@ -17,12 +17,14 @@ func nixExprSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"file": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The file in `input` which contains the Nix expression. Relative to the root of `input`.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"input": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The name of the `input` which contains `file`.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
