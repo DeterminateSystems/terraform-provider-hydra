@@ -138,10 +138,11 @@ func resourceHydraJobset() *schema.Resource {
 			"email_notifications": {
 				Description: "Whether or not to send email notifications",
 				Type:        schema.TypeBool,
-				Required:    true,
+				Optional:    true,
+				Default:     false,
 			},
 			"email_override": {
-				Description: "Where to send email notifications.",
+				Description: "An email, or a comma-separated list of emails, to send email notifications to.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
