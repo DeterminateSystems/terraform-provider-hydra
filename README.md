@@ -4,7 +4,7 @@ The Terraform Hydra provider is a plugin for Terraform that allows for
 declarative management of a [Hydra] instance.
 
 <sup>**NOTE**: Only Hydra instances running [commit
-`e9a0611`](https://github.com/NixOS/hydra/commit/e9a06113c955e457fa59717c4964c302e852ee9b)
+`5520f4b`](https://github.com/NixOS/hydra/commit/5520f4b7b626c1ff41fc5fb5b990ee279507b6b3)
 or later are officially supported. That commit is the last in a series of
 patches that flesh out Hydra's API and its responses to make it suitable for
 automation with this plugin.</sup>
