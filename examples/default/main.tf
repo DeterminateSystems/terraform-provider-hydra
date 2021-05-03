@@ -17,16 +17,10 @@ resource "hydra_project" "nixpkgs" {
   name         = "nixpkgs"
   display_name = "Nixpkgs"
   description  = "Nix Packages collection"
-  homepage     = "http://nixos.org/nixpkgs"
+  homepage     = "https://nixos.org/nixpkgs"
   owner        = "alice"
   enabled      = true
   visible      = true
-
-  declarative {
-    file  = "static-declarative-project/declarative.json"
-    type  = "git"
-    value = "https://github.com/DeterminateSystems/hydra-examples.git main"
-  }
 }
 
 resource "hydra_jobset" "trunk" {
