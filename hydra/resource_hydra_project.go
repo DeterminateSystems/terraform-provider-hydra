@@ -11,6 +11,28 @@ import (
 	"terraform-provider-hydra/hydra/api"
 )
 
+func declInputSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"file": {
+				Description: "The file in `value` which contains the declarative spec file. Relative to the root of `input`.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"type": {
+				Description: "The type of the declarative input.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"value": {
+				Description: "The value of the declarative input.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+}
+
 func resourceHydraProject() *schema.Resource {
 	return &schema.Resource{
 		Description: "Resource defining a Hydra project.",
@@ -50,7 +72,6 @@ func resourceHydraProject() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			// TODO: declarative configuration
 			"enabled": {
 				Description: "Whether or not the project is enabled.",
 				Type:        schema.TypeBool,
@@ -63,8 +84,61 @@ func resourceHydraProject() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
+			"declarative": {
+				Description: "Configuration of the declarative project.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				MinItems:    1,
+				MaxItems:    1,
+				Elem:        declInputSchema(),
+			},
 		},
 	}
+}
+
+// Construct a PUT request to the /project/{id} endpoint that can either create
+// a new project or update an existing one.
+func createProjectPutBody(name string, d *schema.ResourceData) *api.PutProjectIdJSONRequestBody {
+	display_name := d.Get("display_name").(string)
+	description := d.Get("description").(string)
+	homepage := d.Get("homepage").(string)
+	owner := d.Get("owner").(string)
+
+	body := api.PutProjectIdJSONRequestBody{
+		Name:        &name,
+		Displayname: &display_name,
+		Description: &description,
+		Homepage:    &homepage,
+		Owner:       &owner,
+	}
+
+	enabled := d.Get("enabled").(bool)
+	if enabled {
+		body.Enabled = &enabled
+	}
+
+	visible := d.Get("visible").(bool)
+	if visible {
+		body.Visible = &visible
+	}
+
+	declarative := d.Get("declarative").(*schema.Set)
+	if len(declarative.List()) > 0 {
+		// There will only ever be one declarative block, so it's fine to access the
+		// first (and only) element without precomputing
+		decl := declarative.List()[0].(map[string]interface{})
+		file := decl["file"].(string)
+		inputType := decl["type"].(string)
+		value := decl["value"].(string)
+
+		body.Declarative = &api.DeclarativeInput{
+			File:  &file,
+			Type:  &inputType,
+			Value: &value,
+		}
+	}
+
+	return &body
 }
 
 func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -89,29 +163,9 @@ func resourceHydraProjectCreate(ctx context.Context, d *schema.ResourceData, m i
 	}
 
 	// Now that we're sure the project doesn't exist, we can continue creating it
-	display_name := d.Get("display_name").(string)
-	description := d.Get("description").(string)
-	homepage := d.Get("homepage").(string)
-	owner := d.Get("owner").(string)
-	enabled := d.Get("enabled").(bool)
-	visible := d.Get("visible").(bool)
+	body := createProjectPutBody(name, d)
 
-	body := api.PutProjectIdJSONRequestBody{
-		Displayname: &display_name,
-		Description: &description,
-		Homepage:    &homepage,
-		Owner:       &owner,
-	}
-
-	if enabled {
-		body.Enabled = &enabled
-	}
-
-	if visible {
-		body.Visible = &visible
-	}
-
-	put, err := client.PutProjectIdWithResponse(ctx, name, body)
+	put, err := client.PutProjectIdWithResponse(ctx, name, *body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -164,6 +218,22 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("owner", *project.Owner)
 	d.Set("enabled", *project.Enabled)
 	d.Set("visible", !(*project.Hidden))
+
+	if project.Declarative != nil &&
+		(project.Declarative.File != nil && *project.Declarative.File != "") &&
+		(project.Declarative.Type != nil && *project.Declarative.Type != "") &&
+		(project.Declarative.Value != nil && *project.Declarative.Value != "") {
+		declarative := schema.NewSet(schema.HashResource(declInputSchema()), []interface{}{
+			map[string]interface{}{
+				"file":  *project.Declarative.File,
+				"type":  *project.Declarative.Type,
+				"value": *project.Declarative.Value,
+			},
+		})
+
+		d.Set("declarative", declarative)
+	}
+
 	d.SetId(*project.Name)
 
 	return nil
@@ -175,31 +245,10 @@ func resourceHydraProjectUpdate(ctx context.Context, d *schema.ResourceData, m i
 
 	id := d.Id()
 	name := d.Get("name").(string)
-	display_name := d.Get("display_name").(string)
-	description := d.Get("description").(string)
-	homepage := d.Get("homepage").(string)
-	owner := d.Get("owner").(string)
-	enabled := d.Get("enabled").(bool)
-	visible := d.Get("visible").(bool)
-
-	body := api.PutProjectIdJSONRequestBody{
-		Name:        &name,
-		Displayname: &display_name,
-		Description: &description,
-		Homepage:    &homepage,
-		Owner:       &owner,
-	}
-
-	if enabled {
-		body.Enabled = &enabled
-	}
-
-	if visible {
-		body.Visible = &visible
-	}
+	body := createProjectPutBody(name, d)
 
 	// Send the PUT request to the soon-to-be old project name using the resource's ID
-	put, err := client.PutProjectIdWithResponse(ctx, id, body)
+	put, err := client.PutProjectIdWithResponse(ctx, id, *body)
 	if err != nil {
 		return diag.FromErr(err)
 	}

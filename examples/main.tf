@@ -19,9 +19,14 @@ resource "hydra_project" "nixpkgs" {
   description  = "Nix Packages collection"
   homepage     = "http://nixos.org/nixpkgs"
   owner        = "alice"
-  # TODO: declarative configuration
-  enabled = true
-  visible = true
+  enabled      = true
+  visible      = true
+
+  declarative {
+    file  = "static-declarative-project/declarative.json"
+    type  = "git"
+    value = "https://github.com/DeterminateSystems/hydra-examples.git main"
+  }
 }
 
 resource "hydra_jobset" "trunk" {
