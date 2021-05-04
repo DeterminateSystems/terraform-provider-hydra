@@ -22,10 +22,10 @@ resource "hydra_jobset" "trunk" {
 
   check_interval    = 0
   scheduling_shares = 3000
+  keep_evaluations  = 3
 
   email_notifications = true
   email_override      = "example@example.com"
-  keep_evaluations    = 3
 
   input {
     name              = "nixpkgs"
@@ -58,10 +58,10 @@ resource "hydra_jobset" "trunk-flake" {
 
   check_interval    = 0
   scheduling_shares = 3000
+  keep_evaluations  = 3
 
   email_notifications = true
   email_override      = "example@example.com"
-  keep_evaluations    = 3
 }
 ```
 
@@ -106,11 +106,11 @@ disables polling).
 
 * `scheduling_shares` - (Required) How many shares allocated to the jobset.
 
+* `keep_evaluations` - (Required) How many of the jobset's evaluations to keep.
+
 * `email_notifications` - (Optional) Whether or not to send email notifications.
 
 * `email_override` - (Optional) An email, or a comma-separated list of emails,
 to send email notifications to.
-
-* `keep_evaluations` - (Required) How many of the jobset's evaluations to keep.
 
 [Hydra jobset]: https://github.com/NixOS/hydra/blob/e9a06113c955e457fa59717c4964c302e852ee9b/doc/manual/src/projects.md#job-sets
