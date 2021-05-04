@@ -9,6 +9,7 @@ pkgs.mkShell {
     curl
     oapi-codegen
     goimports # better than gofmt because it adds missing imports
+    golint
     git-absorb
     findutils
   ];
