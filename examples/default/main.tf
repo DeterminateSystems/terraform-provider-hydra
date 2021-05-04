@@ -38,10 +38,10 @@ resource "hydra_jobset" "trunk" {
 
   check_interval    = 0
   scheduling_shares = 3000
+  keep_evaluations  = 3
 
   email_notifications = true
   email_override      = "example@example.com"
-  keep_evaluations    = 3
 
   input {
     name              = "nixpkgs"
@@ -70,8 +70,8 @@ resource "hydra_jobset" "trunk-flake" {
 
   check_interval    = 0
   scheduling_shares = 3000
+  keep_evaluations  = 3
 
   email_notifications = true
   email_override      = "example@example.com"
-  keep_evaluations    = 3
 }
