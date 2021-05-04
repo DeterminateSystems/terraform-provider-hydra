@@ -107,3 +107,15 @@ jobs:
             if [ -n "$(git status -s)" ]; then
               exit 1
             fi'
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
+      - name: Shellcheck ./tools/
+        working-directory: ./tools
+        run: nix-shell --run 'shellcheck $(find . -type f -executable)'
