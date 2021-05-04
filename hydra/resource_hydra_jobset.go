@@ -248,32 +248,32 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 	description := d.Get("description").(string)
 	body.Description = &description
 
-	check_interval := d.Get("check_interval").(int)
-	body.Checkinterval = &check_interval
+	checkInterval := d.Get("check_interval").(int)
+	body.Checkinterval = &checkInterval
 
-	scheduling_shares := d.Get("scheduling_shares").(int)
-	body.Schedulingshares = &scheduling_shares
+	schedulingShares := d.Get("scheduling_shares").(int)
+	body.Schedulingshares = &schedulingShares
 
-	keep_evaluations := d.Get("keep_evaluations").(int)
-	body.Keepnr = &keep_evaluations
+	keepEvaluations := d.Get("keep_evaluations").(int)
+	body.Keepnr = &keepEvaluations
 
 	visible := d.Get("visible").(bool)
 	if visible {
 		body.Visible = &visible
 	}
 
-	email_notifications := d.Get("email_notifications").(bool)
-	if email_notifications {
-		body.Enableemail = &email_notifications
+	emailNotifications := d.Get("email_notifications").(bool)
+	if emailNotifications {
+		body.Enableemail = &emailNotifications
 	}
 
-	email_override := d.Get("email_override").(string)
-	if email_override != "" {
-		body.Emailoverride = &email_override
+	emailOverride := d.Get("email_override").(string)
+	if emailOverride != "" {
+		body.Emailoverride = &emailOverride
 	}
 
-	flake_uri := d.Get("flake_uri").(string)
-	if jobsetType == 0 && flake_uri != "" {
+	flakeURI := d.Get("flake_uri").(string)
+	if jobsetType == 0 && flakeURI != "" {
 		return nil, []diag.Diagnostic{{
 			Severity: diag.Error,
 			Summary:  errsummary,
@@ -281,7 +281,7 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 		}}
 	}
 
-	if jobsetType == 1 && flake_uri == "" {
+	if jobsetType == 1 && flakeURI == "" {
 		return nil, []diag.Diagnostic{{
 			Severity: diag.Error,
 			Summary:  errsummary,
@@ -289,12 +289,12 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 		}}
 	}
 
-	if flake_uri != "" {
-		body.Flake = &flake_uri
+	if flakeURI != "" {
+		body.Flake = &flakeURI
 	}
 
-	nix_expression := d.Get("nix_expression").(*schema.Set)
-	if jobsetType == 1 && len(nix_expression.List()) > 0 {
+	nixExpression := d.Get("nix_expression").(*schema.Set)
+	if jobsetType == 1 && len(nixExpression.List()) > 0 {
 		return nil, []diag.Diagnostic{{
 			Severity: diag.Error,
 			Summary:  errsummary,
@@ -302,7 +302,7 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 		}}
 	}
 
-	if jobsetType == 0 && len(nix_expression.List()) < 1 {
+	if jobsetType == 0 && len(nixExpression.List()) < 1 {
 		return nil, []diag.Diagnostic{{
 			Severity: diag.Error,
 			Summary:  errsummary,
@@ -310,10 +310,10 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 		}}
 	}
 
-	if len(nix_expression.List()) > 0 {
+	if len(nixExpression.List()) > 0 {
 		// There will only ever be one nix_expression, so it's fine to access the
 		// first (and only) element without precomputing
-		expr := nix_expression.List()[0].(map[string]interface{})
+		expr := nixExpression.List()[0].(map[string]interface{})
 		input := expr["input"].(string)
 		path := expr["file"].(string)
 		body.Nixexprinput = &input
@@ -360,7 +360,7 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 	return &body, nil
 }
 
-func resourceHydraJobsetParseId(id string) (string, string, error) {
+func resourceHydraJobsetParseID(id string) (string, string, error) {
 	parts := strings.SplitN(id, "/", 2)
 
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
@@ -440,7 +440,7 @@ func resourceHydraJobsetRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	id := d.Id()
 
-	project, jobset, err := resourceHydraJobsetParseId(id)
+	project, jobset, err := resourceHydraJobsetParseID(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -488,14 +488,14 @@ func resourceHydraJobsetRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	if (jobsetResponse.Nixexprinput != nil && *jobsetResponse.Nixexprinput != "") &&
 		(jobsetResponse.Nixexprpath != nil && *jobsetResponse.Nixexprpath != "") {
-		nix_expression := schema.NewSet(schema.HashResource(nixExprSchema()), []interface{}{
+		nixExpression := schema.NewSet(schema.HashResource(nixExprSchema()), []interface{}{
 			map[string]interface{}{
 				"input": *jobsetResponse.Nixexprinput,
 				"file":  *jobsetResponse.Nixexprpath,
 			},
 		})
 
-		d.Set("nix_expression", nix_expression)
+		d.Set("nix_expression", nixExpression)
 	}
 
 	if jobsetResponse.Inputs != nil {
@@ -504,8 +504,8 @@ func resourceHydraJobsetRead(ctx context.Context, d *schema.ResourceData, m inte
 		d.Set("input", inputs)
 	}
 
-	newId := fmt.Sprintf("%s/%s", *jobsetResponse.Project, *jobsetResponse.Name)
-	d.SetId(newId)
+	newID := fmt.Sprintf("%s/%s", *jobsetResponse.Project, *jobsetResponse.Name)
+	d.SetId(newID)
 
 	return nil
 }
@@ -518,7 +518,7 @@ func resourceHydraJobsetUpdate(ctx context.Context, d *schema.ResourceData, m in
 	newProject := d.Get("project").(string)
 	newJobset := d.Get("name").(string)
 
-	project, jobset, err := resourceHydraJobsetParseId(id)
+	project, jobset, err := resourceHydraJobsetParseID(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -559,7 +559,7 @@ func resourceHydraJobsetDelete(ctx context.Context, d *schema.ResourceData, m in
 
 	id := d.Id()
 
-	project, jobset, err := resourceHydraJobsetParseId(id)
+	project, jobset, err := resourceHydraJobsetParseID(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -588,7 +588,7 @@ func resourceHydraJobsetDelete(ctx context.Context, d *schema.ResourceData, m in
 func flattenInputs(in map[string]api.JobsetInput) []interface{} {
 	out := make([]interface{}, 0, len(in))
 
-	for k, _ := range in {
+	for k := range in {
 		props := make(map[string]interface{})
 
 		props["name"] = *in[k].Name
