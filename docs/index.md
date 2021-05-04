@@ -24,8 +24,8 @@ provider "hydra" {
 
 The Hydra provider supports two means of providing authentication credentials:
 
-- Static credentials
 - Environment variables
+- Static credentials
 
 -> The user specified by either a static `username` or `HYDRA_USERNAME`
 environment variable should have the permissions necessary for project and
