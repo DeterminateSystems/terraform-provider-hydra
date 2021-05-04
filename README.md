@@ -40,4 +40,37 @@ $ nix-shell
 nix-shell$ HYDRA_HOST=http://0:63333 HYDRA_USERNAME=alice HYDRA_PASSWORD=foobar make testacc
 ```
 
+## Importing from an existing Hydra instance
+
+Migrate from a manually configured Hydra to Terraform-managed configuration
+files using our included generator,
+[`./tools/generator.sh`](./tools/generator.sh).
+
+The generator enumerates the server's projects and jobsets, generating a `.tf`
+file for each project. The generator also produces a script of `terraform
+import` commands.
+
+The workflow is:
+
+1. Execute `generator.sh`
+2. Commit the generated `.tf` files to your repository
+3. Execute the generated `terraform import` script
+4. Discard the `terraform import` script, as it should not be necessary anymore
+
+Your Terraform network and state file will now have up to date data for all of
+your existing project and jobset resources, and a `terraform plan` should be
+clean: no difference should be detected.
+
+```shell
+$ cd tools
+$ nix-shell
+# Usage: generator.sh <server-root> <out-dir> <import-file>
+#
+#     Arguments:
+#         <server-root>    The root of the Hydra server to import projects and jobsets from.
+#         <out-dir>        The directory to output generated Terraform configuration files to.
+#         <import-file>    Where to write the generated list of 'terraform import' statements.
+nix-shell$ ./generator.sh hydra.example.com outdir generated-tf-import.sh
+```
+
 [Hydra]: https://github.com/NixOS/hydra/
