@@ -48,11 +48,12 @@ func Provider() *schema.Provider {
 	}
 }
 
-// Wrapper type around retryablehttp.Client so that we can implement the
-// HttpRequestDoer interface.
-type RetryableHttpClient retryablehttp.Client
+// RetryableHTTPClient is a wrapper type around retryablehttp.Client so that we
+// can implement the HttpRequestDoer interface.
+type RetryableHTTPClient retryablehttp.Client
 
-func (c *RetryableHttpClient) Do(req *http.Request) (*http.Response, error) {
+// Do - Perform the provided HTTP request using a retryablehttp.Client.
+func (c *RetryableHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	r, err := retryablehttp.FromRequest(req)
 	if err != nil {
 		return nil, err
@@ -80,7 +81,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	retry.RetryWaitMin = time.Second
 	retry.RetryWaitMax = 30 * time.Second
 	retry.RetryMax = 10
-	retry.CheckRetry = HydraRetryPolicy
+	retry.CheckRetry = retryPolicy
 	retry.Logger = nil
 	retry.HTTPClient.Jar = jar
 	retry.HTTPClient.Transport = logging.NewTransport(
@@ -88,7 +89,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		retry.HTTPClient.Transport,
 	)
 
-	client := (*RetryableHttpClient)(retry)
+	client := (*RetryableHTTPClient)(retry)
 
 	c, err := api.NewClientWithResponses(host, func(c *api.Client) error {
 		c.Client = client
@@ -131,7 +132,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 // https://github.com/packethost/terraform-provider-packet/blob/c57d85cfe55288a87b51938ff8909fdbf932a5af/packet/config.go#L24
 var redirectsErrorRe = regexp.MustCompile(`stopped after \d+ redirects\z`)
 
-func HydraRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	if ctx.Err() != nil {
 		return false, ctx.Err()
 	}

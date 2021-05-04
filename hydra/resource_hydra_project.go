@@ -99,14 +99,14 @@ func resourceHydraProject() *schema.Resource {
 // Construct a PUT request to the /project/{id} endpoint that can either create
 // a new project or update an existing one.
 func createProjectPutBody(name string, d *schema.ResourceData) *api.PutProjectIdJSONRequestBody {
-	display_name := d.Get("display_name").(string)
+	displayName := d.Get("display_name").(string)
 	description := d.Get("description").(string)
 	homepage := d.Get("homepage").(string)
 	owner := d.Get("owner").(string)
 
 	body := api.PutProjectIdJSONRequestBody{
 		Name:        &name,
-		Displayname: &display_name,
+		Displayname: &displayName,
 		Description: &description,
 		Homepage:    &homepage,
 		Owner:       &owner,

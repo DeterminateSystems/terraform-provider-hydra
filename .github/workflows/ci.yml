@@ -43,6 +43,17 @@ jobs:
               exit 1
             fi'
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
+      - name: Check golint
+        run: nix-shell --run 'golint -set_exit_status hydra'
+
   test:
     runs-on: ubuntu-latest
     steps:
