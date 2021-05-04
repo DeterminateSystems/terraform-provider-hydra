@@ -2,9 +2,14 @@ package hydra
 
 import (
 	"context"
+	"crypto/x509"
 	"net/http"
 	"net/http/cookiejar"
+	"net/url"
+	"regexp"
+	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -43,6 +48,21 @@ func Provider() *schema.Provider {
 	}
 }
 
+// Wrapper type around retryablehttp.Client so that we can implement the
+// HttpRequestDoer interface.
+type RetryableHttpClient retryablehttp.Client
+
+func (c *RetryableHttpClient) Do(req *http.Request) (*http.Response, error) {
+	r, err := retryablehttp.FromRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	client := (*retryablehttp.Client)(c)
+
+	return client.Do(r)
+}
+
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	host := d.Get("host").(string)
 	username := d.Get("username").(string)
@@ -56,11 +76,19 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diag.FromErr(err)
 	}
 
-	client := &http.Client{Jar: jar}
-	client.Transport = logging.NewTransport(
+	retry := retryablehttp.NewClient()
+	retry.RetryWaitMin = time.Second
+	retry.RetryWaitMax = 30 * time.Second
+	retry.RetryMax = 10
+	retry.CheckRetry = HydraRetryPolicy
+	retry.Logger = nil
+	retry.HTTPClient.Jar = jar
+	retry.HTTPClient.Transport = logging.NewTransport(
 		"DeterminateSystems/terraform-provider-hydra",
-		http.DefaultTransport,
+		retry.HTTPClient.Transport,
 	)
+
+	client := (*RetryableHttpClient)(retry)
 
 	c, err := api.NewClientWithResponses(host, func(c *api.Client) error {
 		c.Client = client
@@ -98,4 +126,32 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	return c, diags
+}
+
+// https://github.com/packethost/terraform-provider-packet/blob/c57d85cfe55288a87b51938ff8909fdbf932a5af/packet/config.go#L24
+var redirectsErrorRe = regexp.MustCompile(`stopped after \d+ redirects\z`)
+
+func HydraRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	if ctx.Err() != nil {
+		return false, ctx.Err()
+	}
+
+	if err != nil {
+		if v, ok := err.(*url.Error); ok {
+			// Don't retry if the error was due to too many redirects.
+			if redirectsErrorRe.MatchString(v.Error()) {
+				return false, nil
+			}
+
+			// Don't retry if the error was due to TLS cert verification failure.
+			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+				return false, nil
+			}
+		}
+
+		// The error is likely recoverable so retry.
+		return true, nil
+	}
+
+	return false, nil
 }
