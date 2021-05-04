@@ -70,11 +70,23 @@ jobs:
         uses: cachix/install-nix-action@v13
       - run: nix-shell --run 'make install'
       - name: Terraform fmt
-        run: nix-shell --run 'terraform -chdir=./examples fmt -check'
+        run: nix-shell --run 'terraform fmt -check -recursive ./examples'
       - name: Terraform init
-        run: nix-shell --run 'terraform -chdir=./examples init'
+        run: |
+          nix-shell --run '
+            for dir in $(find examples -type d); do
+              echo "initializing dir $dir"
+              terraform init $dir
+            done
+          '
       - name: Terraform validate
-        run: nix-shell --run 'terraform -chdir=./examples validate -no-color'
+        run: |
+          nix-shell --run '
+            for dir in $(find examples -type d); do
+              echo "validating dir $dir"
+              terraform validate -no-color $dir
+            done
+          '
       # TODO: needs hydra running
       # - name: Terraform plan
       #   run: nix-shell --run 'terraform -chdir=./examples plan -no-color'
