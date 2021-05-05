@@ -65,6 +65,16 @@ func TestAccHydraJobset_basic(t *testing.T) {
 					testAccCheckJobsetExists(resourceName),
 				),
 			},
+			// Test that state will want to be updated if anything is changed in the web
+			// UI (e.g. the nix expression file / path)
+			{
+				Config:      testAccHydraJobsetConfigBasic(name, name),
+				ExpectError: regexp.MustCompile(`Plan: 0 to add, 1 to change, 0 to destroy`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJobsetExists(resourceName),
+					testAccCheckJobsetChangeNixExprFile(resourceName),
+				),
+			},
 		},
 	})
 }
@@ -359,6 +369,55 @@ func testAccCheckJobsetType(name string, jobsetType int) resource.TestCheckFunc 
 				(jobsetResponse.Type != nil && *jobsetResponse.Type == 0) {
 				return fmt.Errorf("Expected jobset %s in project %s to be type flake", jobsetID, projectID)
 			}
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckJobsetChangeNixExprFile(name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("Resource not found for %s", name)
+		}
+
+		jobsetID := rs.Primary.Attributes["name"]
+		if jobsetID == "" {
+			return fmt.Errorf("No jobset is set for %s", name)
+		}
+		projectID := rs.Primary.Attributes["project"]
+		if projectID == "" {
+			return fmt.Errorf("No project is set for %s", name)
+		}
+
+		client := testAccProvider.Meta().(*api.ClientWithResponses)
+		ctx := context.Background()
+
+		get, err := client.GetJobsetProjectIdJobsetIdWithResponse(ctx, projectID, jobsetID)
+		if err != nil {
+			return err
+		}
+		defer get.HTTPResponse.Body.Close()
+
+		// Check to make sure the jobset was created
+		if get.HTTPResponse.StatusCode != http.StatusOK {
+			return fmt.Errorf("Expected jobset %s in project %s to be created", jobsetID, projectID)
+		}
+
+		// Update the nix_expression file out-of-band to simulate a user changing the
+		// file using the web UI
+		rs.Primary.Attributes["nix_expression.0.file"] = "bogus"
+		d := resourceHydraJobset().Data(rs.Primary)
+		body, _ := createJobsetPutBody(projectID, jobsetID, d)
+		put, err := client.PutJobsetProjectIdJobsetIdWithResponse(ctx, projectID, jobsetID, *body)
+		if err != nil {
+			return err
+		}
+		defer put.HTTPResponse.Body.Close()
+
+		if get.HTTPResponse.StatusCode != http.StatusOK {
+			return fmt.Errorf("Expected jobset %s in project %s to be updated", jobsetID, projectID)
 		}
 
 		return nil
