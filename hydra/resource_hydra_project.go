@@ -219,10 +219,17 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("enabled", *project.Enabled)
 	d.Set("visible", !(*project.Hidden))
 
+	// If Declarative can be dereferenced and every field is not empty, we update
+	// the internal representation with it. If the project was never declarative,
+	// none of these fields will be set. If it was ever declarative, some of these
+	// fields may be set, and we want to inform Terraform of that.
 	if project.Declarative != nil &&
-		(project.Declarative.File != nil && *project.Declarative.File != "") &&
-		(project.Declarative.Type != nil && *project.Declarative.Type != "") &&
-		(project.Declarative.Value != nil && *project.Declarative.Value != "") {
+		project.Declarative.File != nil &&
+		project.Declarative.Type != nil &&
+		project.Declarative.Value != nil &&
+		!(*project.Declarative.File == "" &&
+			*project.Declarative.Type == "" &&
+			*project.Declarative.Value == "") {
 		declarative := schema.NewSet(schema.HashResource(declInputSchema()), []interface{}{
 			map[string]interface{}{
 				"file":  *project.Declarative.File,
