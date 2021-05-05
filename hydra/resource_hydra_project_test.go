@@ -98,7 +98,7 @@ func TestAccHydraProject_declarative(t *testing.T) {
 				ExpectError: regexp.MustCompile(`Plan: 0 to add, 1 to change, 0 to destroy`),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckProjectExists(resourceName),
-					testAccCheckProjectChangeDeclFile(resourceName, name),
+					testAccCheckProjectChangeDeclFile(resourceName),
 				),
 			},
 		},
@@ -163,16 +163,16 @@ func testAccCheckProjectExists(name string) resource.TestCheckFunc {
 	}
 }
 
-func testAccCheckProjectChangeDeclFile(resourceName string, projectName string) resource.TestCheckFunc {
+func testAccCheckProjectChangeDeclFile(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
+		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Resource not found for %s", resourceName)
+			return fmt.Errorf("Resource not found for %s", name)
 		}
 
 		projectID := rs.Primary.ID
 		if projectID == "" {
-			return fmt.Errorf("No ID is set for %s", resourceName)
+			return fmt.Errorf("No ID is set for %s", name)
 		}
 
 		client := testAccProvider.Meta().(*api.ClientWithResponses)
@@ -193,7 +193,7 @@ func testAccCheckProjectChangeDeclFile(resourceName string, projectName string) 
 		// declarative config using the web UI
 		rs.Primary.Attributes["declarative.0.file"] = "bogus"
 		d := resourceHydraProject().Data(rs.Primary)
-		body := createProjectPutBody(projectName, d)
+		body := createProjectPutBody(projectID, d)
 		put, err := client.PutProjectIdWithResponse(ctx, projectID, *body)
 		if err != nil {
 			return err
