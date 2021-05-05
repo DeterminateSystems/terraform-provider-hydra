@@ -185,6 +185,15 @@ change (or write your own example!)
 1. Commit and open a pull request (be sure to follow the checklist in the
 template)
 
+## FAQ
+
+#### Q. Does this provider support Basic Authentication?
+
+A. Yes! Just set the `HYDRA_HOST` environment variable to e.g.
+`https://user:password@hydra.example.com`. You can also set the `host` in your
+configuration to this, but hard-coded credentials are insecure and not
+recommended.
+
 ## License
 
 [MPL-2.0](LICENSE)

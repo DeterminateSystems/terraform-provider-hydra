@@ -63,6 +63,8 @@ provider "hydra" {
 
 * `host` - (Optional) This is the address of the Hydra instance. It must be
 provided, but it can also be sourced from the `HYDRA_HOST` environment variable.
+Additionally, it supports Basic Authentication (e.g.
+`https://user:password@hydra.example.com`).
 
 * `username` - (Optional) This is the user that Terraform will be logging in as.
 It must be provided, but it can also be sourced from the `HYDRA_USERNAME`
