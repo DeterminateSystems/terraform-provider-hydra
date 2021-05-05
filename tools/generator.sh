@@ -160,7 +160,7 @@ TPL
 
 TPL
 
-    done < <(echo "$jobset" | jq -c ".inputs | to_entries | .[] | .value")
+    done < <(echo "$jobset" | jq -c ".inputs | to_entries | sort_by(.key) | .[] | .value")
 }
 
 inputDefinitionFlake() {
@@ -256,7 +256,7 @@ generate() {
                             echo
                             jobset="$(curl --silent --header "Accept: application/json" "$serverRoot/jobset/$projectname/$jobsetname" | jq .)"
                             renderJobset "$projectname" "$jobsetname" "$jobset"
-                        done < <(echo "$project" | jq -r ".jobsets[]")
+                        done < <(echo "$project" | jq -r ".jobsets | sort | .[]")
                     fi
                 ) > "$generatedDir/generated.$projectname.tf"
             ) &
