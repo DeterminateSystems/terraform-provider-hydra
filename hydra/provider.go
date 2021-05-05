@@ -109,8 +109,19 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		Username: &username,
 		Password: &password,
 	}
+
 	resp, err := c.PostLoginWithResponse(ctx, body, func(ctx context.Context, req *http.Request) error {
-		req.Header.Add("Origin", host)
+		origin, err := url.Parse(host)
+		if err != nil {
+			return err
+		}
+
+		// Set the User field to nil in order to strip out authentication information
+		// from the URI -- Hydra expects *only* the host (and port, if necessary) as
+		// the Origin.
+		origin.User = nil
+
+		req.Header.Add("Origin", origin.String())
 		return nil
 	})
 	if err != nil {
