@@ -158,7 +158,7 @@ resource "hydra_project" "test" {
   description  = "Nix Packages collection"
   homepage     = "http://nixos.org/nixpkgs"
   owner        = "%s"
-  enabled      = true
+  enabled      = false
   visible      = true
 
   declarative {
