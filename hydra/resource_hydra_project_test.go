@@ -122,6 +122,37 @@ func testAccCheckHydraProjectDestroy(s *terraform.State) error {
 	return nil
 }
 
+// testAccCheckProjectExists verifies the project was successfully created
+func testAccCheckProjectExists(name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("Resource not found for %s", name)
+		}
+
+		projectID := rs.Primary.ID
+		if projectID == "" {
+			return fmt.Errorf("No ID is set for %s", name)
+		}
+
+		client := testAccProvider.Meta().(*api.ClientWithResponses)
+		ctx := context.Background()
+
+		get, err := client.GetProjectIdWithResponse(ctx, projectID)
+		if err != nil {
+			return err
+		}
+		defer get.HTTPResponse.Body.Close()
+
+		// Check to make sure the project was created
+		if get.HTTPResponse.StatusCode != http.StatusOK {
+			return fmt.Errorf("Expected project %s to be created", projectID)
+		}
+
+		return nil
+	}
+}
+
 func testAccHydraProjectConfigHiddenDisabled(name string) string {
 	return fmt.Sprintf(`
 resource "hydra_project" "test" {
@@ -168,35 +199,4 @@ resource "hydra_project" "test" {
   }
 }
 `, name, os.Getenv("HYDRA_USERNAME"))
-}
-
-// testAccCheckProjectExists verifies the project was successfully created
-func testAccCheckProjectExists(name string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[name]
-		if !ok {
-			return fmt.Errorf("Resource not found for %s", name)
-		}
-
-		projectID := rs.Primary.ID
-		if projectID == "" {
-			return fmt.Errorf("No ID is set for %s", name)
-		}
-
-		client := testAccProvider.Meta().(*api.ClientWithResponses)
-		ctx := context.Background()
-
-		get, err := client.GetProjectIdWithResponse(ctx, projectID)
-		if err != nil {
-			return err
-		}
-		defer get.HTTPResponse.Body.Close()
-
-		// Check to make sure the project was created
-		if get.HTTPResponse.StatusCode != http.StatusOK {
-			return fmt.Errorf("Expected project %s to be created", projectID)
-		}
-
-		return nil
-	}
 }
