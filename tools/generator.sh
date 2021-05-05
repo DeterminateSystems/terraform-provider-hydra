@@ -244,6 +244,14 @@ generate() {
 
                     if [ -z "$declfile" ]; then
                         while read -r jobsetname; do
+                            if [ "$jobsetname" = ".jobsets" ]; then
+                                echo >&2
+                                echo "WARNING: $project is not declarative, but has a .jobsets jobset which has been ignored." >&2
+                                echo "         See https://github.com/NixOS/hydra/issues/960 for more information." >&2
+                                echo >&2
+                                continue
+                            fi
+
                             echo "Processing jobset '$projectname/$jobsetname'..." >&2
                             echo
                             jobset="$(curl --silent --header "Accept: application/json" "$serverRoot/jobset/$projectname/$jobsetname" | jq .)"
