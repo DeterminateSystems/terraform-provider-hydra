@@ -42,7 +42,7 @@ func resourceHydraProject() *schema.Resource {
 		UpdateContext: resourceHydraProjectUpdate,
 		DeleteContext: resourceHydraProjectDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{

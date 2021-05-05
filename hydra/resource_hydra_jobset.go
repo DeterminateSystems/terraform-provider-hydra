@@ -67,7 +67,7 @@ func resourceHydraJobset() *schema.Resource {
 		UpdateContext: resourceHydraJobsetUpdate,
 		DeleteContext: resourceHydraJobsetDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
