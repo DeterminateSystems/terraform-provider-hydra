@@ -121,8 +121,8 @@ func resourceHydraJobset() *schema.Resource {
 				Type:          schema.TypeSet,
 				Optional:      true,
 				ConflictsWith: []string{"flake_uri"},
-				MaxItems:      1,
 				MinItems:      1,
+				MaxItems:      1,
 				Elem:          nixExprSchema(),
 			},
 			"check_interval": {
@@ -234,6 +234,11 @@ func jobsetTypeToString(jobsetType int) string {
 // can either create a new jobset or update an existing one.
 func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) (*api.PutJobsetProjectIdJobsetIdJSONRequestBody, diag.Diagnostics) {
 	errsummary := "Failed to create Jobset PUT request"
+
+	// Collect errors so we can display all "syntax" errors that Terraform can't
+	// handle for us at the same time (instead of one at a time).
+	var diags diag.Diagnostics
+
 	body := api.PutJobsetProjectIdJobsetIdJSONRequestBody{
 		Project: &project,
 		Name:    &jobset,
@@ -274,19 +279,19 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 
 	flakeURI := d.Get("flake_uri").(string)
 	if jobsetType == 0 && flakeURI != "" {
-		return nil, []diag.Diagnostic{{
+		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  errsummary,
 			Detail:   "You cannot specify a flake_uri when using type \"legacy\".",
-		}}
+		})
 	}
 
 	if jobsetType == 1 && flakeURI == "" {
-		return nil, []diag.Diagnostic{{
+		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  errsummary,
 			Detail:   "Jobset type \"flake\" requires a non-empty flake_uri.",
-		}}
+		})
 	}
 
 	if flakeURI != "" {
@@ -295,19 +300,19 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 
 	nixExpression := d.Get("nix_expression").(*schema.Set)
 	if jobsetType == 1 && len(nixExpression.List()) > 0 {
-		return nil, []diag.Diagnostic{{
+		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  errsummary,
 			Detail:   "You cannot specify a nix_expression when using type \"flake\".",
-		}}
+		})
 	}
 
 	if jobsetType == 0 && len(nixExpression.List()) < 1 {
-		return nil, []diag.Diagnostic{{
+		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  errsummary,
 			Detail:   "Jobset type \"legacy\" requires a non-empty nix_expression.",
-		}}
+		})
 	}
 
 	if len(nixExpression.List()) > 0 {
@@ -322,19 +327,19 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 
 	input := d.Get("input").(*schema.Set)
 	if jobsetType == 1 && len(input.List()) > 0 {
-		return nil, []diag.Diagnostic{{
+		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  errsummary,
 			Detail:   "You cannot specify one or more inputs when using type \"flake\".",
-		}}
+		})
 	}
 
 	if jobsetType == 0 && len(input.List()) < 1 {
-		return nil, []diag.Diagnostic{{
+		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  errsummary,
 			Detail:   "Jobset type \"legacy\" requires non-empty input(s).",
-		}}
+		})
 	}
 
 	if len(input.List()) > 0 {
@@ -357,7 +362,7 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 		}
 	}
 
-	return &body, nil
+	return &body, diags
 }
 
 func resourceHydraJobsetParseID(id string) (string, string, error) {
@@ -518,7 +523,7 @@ func resourceHydraJobsetUpdate(ctx context.Context, d *schema.ResourceData, m in
 	newProject := d.Get("project").(string)
 	newJobset := d.Get("name").(string)
 
-	project, jobset, err := resourceHydraJobsetParseID(id)
+	curProject, curJobset, err := resourceHydraJobsetParseID(id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -528,7 +533,7 @@ func resourceHydraJobsetUpdate(ctx context.Context, d *schema.ResourceData, m in
 		return diags
 	}
 
-	put, err := client.PutJobsetProjectIdJobsetIdWithResponse(ctx, project, jobset, *body)
+	put, err := client.PutJobsetProjectIdJobsetIdWithResponse(ctx, curProject, curJobset, *body)
 	if err != nil {
 		return diag.FromErr(err)
 	}

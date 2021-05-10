@@ -23,16 +23,19 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"host": {
+				Description: "The address of the Hydra instance.",
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("HYDRA_HOST", nil),
 			},
 			"username": {
+				Description: "The user that Terraform will be logging in as.",
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("HYDRA_USERNAME", nil),
 			},
 			"password": {
+				Description: "The password for the Hydra user specified in `username`.",
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("HYDRA_PASSWORD", nil),
@@ -43,7 +46,6 @@ func Provider() *schema.Provider {
 			"hydra_project": resourceHydraProject(),
 			"hydra_jobset":  resourceHydraJobset(),
 		},
-		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
@@ -65,12 +67,11 @@ func (c *RetryableHTTPClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	errsummary := "Failed to configure Provider"
+
 	host := d.Get("host").(string)
 	username := d.Get("username").(string)
 	password := d.Get("password").(string)
-
-	// Warning or errors can be collected in a slice type
-	var diags diag.Diagnostics
 
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	if err != nil {
@@ -89,10 +90,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		retry.HTTPClient.Transport,
 	)
 
-	client := (*RetryableHTTPClient)(retry)
+	httpclient := (*RetryableHTTPClient)(retry)
 
-	c, err := api.NewClientWithResponses(host, func(c *api.Client) error {
-		c.Client = client
+	client, err := api.NewClientWithResponses(host, func(c *api.Client) error {
+		c.Client = httpclient
 		c.RequestEditors = append(c.RequestEditors,
 			func(ctx context.Context, req *http.Request) error {
 				req.Header.Add("Accept", "application/json")
@@ -110,34 +111,35 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		Password: &password,
 	}
 
-	resp, err := c.PostLoginWithResponse(ctx, body, func(ctx context.Context, req *http.Request) error {
-		origin, err := url.Parse(host)
-		if err != nil {
-			return err
-		}
+	resp, err := client.PostLoginWithResponse(ctx, body,
+		func(ctx context.Context, req *http.Request) error {
+			origin, err := url.Parse(host)
+			if err != nil {
+				return err
+			}
 
-		// Set the User field to nil in order to strip out authentication information
-		// from the URI -- Hydra expects *only* the host (and port, if necessary) as
-		// the Origin.
-		origin.User = nil
+			// Set the User field to nil in order to strip out authentication information
+			// from the URI -- Hydra expects *only* the host (and port, if necessary) as
+			// the Origin.
+			origin.User = nil
 
-		req.Header.Add("Origin", origin.String())
-		return nil
-	})
+			req.Header.Add("Origin", origin.String())
+			return nil
+		})
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
 	defer resp.HTTPResponse.Body.Close()
 
 	if resp.JSON403 != nil {
-		diags = append(diags, diag.Diagnostic{
+		return nil, []diag.Diagnostic{{
 			Severity: diag.Error,
-			Summary:  "Failed to create Project",
+			Summary:  errsummary,
 			Detail:   *resp.JSON403.Error,
-		})
+		}}
 	}
 
-	return c, diags
+	return client, nil
 }
 
 // https://github.com/packethost/terraform-provider-packet/blob/c57d85cfe55288a87b51938ff8909fdbf932a5af/packet/config.go#L24
