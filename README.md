@@ -1,7 +1,8 @@
 # terraform-provider-hydra
 
 The Terraform Hydra provider is a plugin for Terraform that allows for
-declarative management of a [Hydra] instance.
+declarative management of a [Hydra] instance. You can find it on the [Terraform
+Registry].
 
 ## Requirements
 
@@ -203,3 +204,4 @@ recommended.
 [Go]: https://golang.org/doc/install
 [`oapi-codegen`]: https://github.com/deepmap/oapi-codegen
 [`goimports`]: https://pkg.go.dev/golang.org/x/tools/cmd/goimports
+[Terraform Registry]: https://registry.terraform.io/providers/DeterminateSystems/hydra/
