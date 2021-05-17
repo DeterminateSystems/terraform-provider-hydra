@@ -162,7 +162,7 @@ unexpected happening.
 
 ```shell
 $ nix-shell
-nix-shell$ HYDRA_HOST=http://0:63333 HYDRA_USERNAME=alice HYDRA_PASSWORD=foobar make testacc
+nix-shell$ HYDRA_HOST=http://0.0.0.0:63333 HYDRA_USERNAME=alice HYDRA_PASSWORD=foobar make testacc
 ```
 
 ## Contributing
