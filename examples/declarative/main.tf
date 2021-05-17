@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "hydra" {
-  host     = "http://0:63333"
+  host     = "http://0.0.0.0:63333"
   username = "alice"
   password = "foobar"
 }
