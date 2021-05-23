@@ -228,7 +228,6 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 		projectResponse.Declarative.Type != nil &&
 		projectResponse.Declarative.Value != nil &&
 		!(*projectResponse.Declarative.File == "" &&
-			*projectResponse.Declarative.Type == "" &&
 			*projectResponse.Declarative.Value == "") {
 		declarative := schema.NewSet(schema.HashResource(declInputSchema()), []interface{}{
 			map[string]interface{}{
