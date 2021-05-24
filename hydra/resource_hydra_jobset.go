@@ -485,10 +485,14 @@ func resourceHydraJobsetRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	if jobsetResponse.Emailoverride != nil && *jobsetResponse.Emailoverride != "" {
 		d.Set("email_override", *jobsetResponse.Emailoverride)
+	} else {
+		d.Set("email_override", nil)
 	}
 
 	if jobsetResponse.Flake != nil && *jobsetResponse.Flake != "" {
 		d.Set("flake_uri", *jobsetResponse.Flake)
+	} else {
+		d.Set("flake_uri", nil)
 	}
 
 	if (jobsetResponse.Nixexprinput != nil && *jobsetResponse.Nixexprinput != "") &&
@@ -501,12 +505,16 @@ func resourceHydraJobsetRead(ctx context.Context, d *schema.ResourceData, m inte
 		})
 
 		d.Set("nix_expression", nixExpression)
+	} else {
+		d.Set("nix_expression", nil)
 	}
 
 	if jobsetResponse.Inputs != nil {
 		inputs := schema.NewSet(schema.HashResource(inputSchema()), flattenInputs(jobsetResponse.Inputs.AdditionalProperties))
 
 		d.Set("input", inputs)
+	} else {
+		d.Set("input", nil)
 	}
 
 	newID := fmt.Sprintf("%s/%s", *jobsetResponse.Project, *jobsetResponse.Name)
