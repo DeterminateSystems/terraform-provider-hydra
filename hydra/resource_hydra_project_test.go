@@ -101,6 +101,17 @@ func TestAccHydraProject_declarative(t *testing.T) {
 					testAccCheckProjectChangeDeclFile(resourceName),
 				),
 			},
+			// Test that state will want to be updated if declarative stuff changes in
+			// the web UI, part 2 (specifically, empty declfile and declvalue will set
+			// `declarative` to nil)
+			{
+				Config:      testAccHydraProjectConfigDeclarative(name),
+				ExpectError: regexp.MustCompile(`Plan: 0 to add, 1 to change, 0 to destroy`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckProjectExists(resourceName),
+					testAccCheckProjectChangeDeclFileValue(resourceName),
+				),
+			},
 		},
 	})
 }
@@ -192,6 +203,53 @@ func testAccCheckProjectChangeDeclFile(name string) resource.TestCheckFunc {
 		// Update the declarative file out-of-band to simulate a user changing the
 		// declarative config using the web UI
 		rs.Primary.Attributes["declarative.0.file"] = "bogus"
+		d := resourceHydraProject().Data(rs.Primary)
+		body := createProjectPutBody(projectID, d)
+		put, err := client.PutProjectIdWithResponse(ctx, projectID, *body)
+		if err != nil {
+			return err
+		}
+		defer put.HTTPResponse.Body.Close()
+
+		if get.HTTPResponse.StatusCode != http.StatusOK {
+			return fmt.Errorf("Expected project %s to be updated", projectID)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckProjectChangeDeclFileValue(name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("Resource not found for %s", name)
+		}
+
+		projectID := rs.Primary.ID
+		if projectID == "" {
+			return fmt.Errorf("No ID is set for %s", name)
+		}
+
+		client := testAccProvider.Meta().(*api.ClientWithResponses)
+		ctx := context.Background()
+
+		get, err := client.GetProjectIdWithResponse(ctx, projectID)
+		if err != nil {
+			return err
+		}
+		defer get.HTTPResponse.Body.Close()
+
+		// Check to make sure the project was created
+		if get.HTTPResponse.StatusCode != http.StatusOK {
+			return fmt.Errorf("Expected project %s to exist", projectID)
+		}
+
+		// Update the declarative file out-of-band to simulate a user changing the
+		// declarative config using the web UI
+		rs.Primary.Attributes["declarative.0.file"] = ""
+		rs.Primary.Attributes["declarative.0.type"] = "boolean"
+		rs.Primary.Attributes["declarative.0.value"] = ""
 		d := resourceHydraProject().Data(rs.Primary)
 		body := createProjectPutBody(projectID, d)
 		put, err := client.PutProjectIdWithResponse(ctx, projectID, *body)
