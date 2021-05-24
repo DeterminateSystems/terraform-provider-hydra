@@ -239,6 +239,8 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 		})
 
 		d.Set("declarative", declarative)
+	} else {
+		d.Set("declarative", nil)
 	}
 
 	d.SetId(*projectResponse.Name)
