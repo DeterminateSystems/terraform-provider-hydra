@@ -182,6 +182,13 @@ func TestAccHydraJobset_inputs(t *testing.T) {
 					testAccCheckJobsetInputsChanged(resourceName, inputName1, inputName2),
 				),
 			},
+			// Test creation of jobset with email_responsible set to true for an input
+			{
+				Config: testAccHydraJobsetConfigInputEmail(name, name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJobsetExists(resourceName),
+				),
+			},
 		},
 	})
 }
@@ -759,5 +766,59 @@ resource "hydra_jobset" "test" {
   email_notifications = true
   email_override      = "example@example.com"
   keep_evaluations    = 3
+}`, project, os.Getenv("HYDRA_USERNAME"), jobset)
+}
+
+func testAccHydraJobsetConfigInputEmail(project string, jobset string) string {
+	return fmt.Sprintf(`
+resource "hydra_project" "test" {
+  name         = "%s"
+  display_name = "Ofborg"
+  description  = "ofborg automation"
+  homepage     = "https://github.com/nixos/ofborg"
+  owner        = "%s"
+  enabled = true
+  visible = true
+}
+
+resource "hydra_jobset" "test" {
+  project     = hydra_project.test.name
+  state       = "enabled"
+  visible     = true
+  name        = "%s"
+  type        = "legacy"
+  description = ""
+
+  nix_expression {
+    file  = "release.nix"
+    input = "ofborg"
+  }
+
+  check_interval    = 0
+  scheduling_shares = 3000
+
+  email_notifications = false
+  keep_evaluations    = 3
+
+  input {
+    name              = "nixpkgs"
+    type              = "git"
+    value             = "https://github.com/NixOS/nixpkgs.git nixpkgs-unstable"
+    notify_committers = false
+  }
+
+  input {
+    name              = "ofborg"
+    type              = "git"
+    value             = "https://github.com/nixos/ofborg.git released"
+    notify_committers = false
+  }
+
+  input {
+    name              = "test"
+    type              = "boolean"
+    value             = "false"
+    notify_committers = true
+  }
 }`, project, os.Getenv("HYDRA_USERNAME"), jobset)
 }
