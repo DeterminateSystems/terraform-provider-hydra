@@ -350,11 +350,19 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 			name := v["name"].(string)
 			inputType := v["type"].(string)
 			value := v["value"].(string)
-			inputs[name] = api.JobsetInput{
+			emailResponsible := v["notify_committers"].(bool)
+
+			jobsetInput := api.JobsetInput{
 				Name:  &name,
 				Type:  &inputType,
 				Value: &value,
 			}
+
+			if emailResponsible {
+				jobsetInput.Emailresponsible = &emailResponsible
+			}
+
+			inputs[name] = jobsetInput
 		}
 
 		body.Inputs = &api.Jobset_Inputs{
