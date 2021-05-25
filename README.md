@@ -10,8 +10,14 @@ To use this provider, you will need the following:
 
 * [Terraform] 0.13+
 * A Hydra instance running [commit
-`6e53767`](https://github.com/NixOS/hydra/commit/6e537671dfa21f89041cbe16f0b461fe44327038)
+`5b6b826`](https://github.com/NixOS/hydra/commit/5b6b8261fc0571c4ee678cbe829ba07ed9372ef0)
 or later
+
+> **NOTE**: You *can* use this provider with [commit
+> `6e53767`](https://github.com/NixOS/hydra/commit/6e537671dfa21f89041cbe16f0b461fe44327038)
+> (at the absolute earliest), but it has a known issue where some internal
+> fields were not nullified, leading to state differences between Hydra and
+> Terraform, and is *not* recommended.
 
 ## Getting started
 
