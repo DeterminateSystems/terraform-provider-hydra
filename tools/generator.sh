@@ -80,14 +80,14 @@ quotedStringFrom() {
 isProjectDeclarative() (
     project=$1
     if echo "$project" | jq -e ".declarative == null" > /dev/null; then
-      return 0
+      return 1
     fi
 
     if echo "$project" | jq -e '.declarative.file == ""' > /dev/null; then
-      return 0
+      return 1
     fi
 
-    return 1
+    return 0
 )
 
 declarativeConfig() {
@@ -254,7 +254,7 @@ generate() {
                 (
                     echo "Processing project '$projectname'..." >&2
                     renderProject "$project"
-                    if isProjectDeclarative "$project"; then
+                    if ! isProjectDeclarative "$project"; then
                         while read -r jobsetname; do
                             if [ "$jobsetname" = ".jobsets" ]; then
                                 echo >&2
