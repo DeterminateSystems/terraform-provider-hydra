@@ -77,22 +77,36 @@ quotedStringFrom() {
     echo "$value"
 }
 
+isProjectDeclarative() (
+    project=$1
+    if echo "$project" | jq -e ".declarative == null" > /dev/null; then
+      return 0
+    fi
+
+    if echo "$project" | jq -e '.declarative.file == ""' > /dev/null; then
+      return 0
+    fi
+
+    return 1
+)
+
 declarativeConfig() {
     project=$1
+    if ! isProjectDeclarative "$project"; then
+        return
+    fi
 
     file=$(echo "$project" | jq -r ".declarative.file")
     type=$(echo "$project" | jq -r ".declarative.type")
     value=$(quotedStringFrom "$project" ".declarative.value")
 
-    if [ -n "$file" ]; then
-        cat <<-TPL
+    cat <<-TPL
   declarative {
       file  = "$file"
       type  = "$type"
       value = $value
   }
 TPL
-    fi
 }
 
 renderProject() {
@@ -240,9 +254,7 @@ generate() {
                 (
                     echo "Processing project '$projectname'..." >&2
                     renderProject "$project"
-                    declfile=$(echo "$project" | jq -r .declarative.file)
-
-                    if [ -z "$declfile" ]; then
+                    if isProjectDeclarative "$project"; then
                         while read -r jobsetname; do
                             if [ "$jobsetname" = ".jobsets" ]; then
                                 echo >&2
