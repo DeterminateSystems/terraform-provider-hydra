@@ -111,19 +111,25 @@ func resourceHydraJobset() *schema.Resource {
 				Default:     "Managed by terraform-provider-hydra.",
 			},
 			"flake_uri": {
-				Description:   "(Mandatory when the `type` is `flake`, otherwise prohibited.) The jobset's flake URI.",
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"nix_expression"},
+				Description: "(Mandatory when the `type` is `flake`, otherwise prohibited.) The jobset's flake URI.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ExactlyOneOf: []string{
+					"flake_uri",
+					"nix_expression",
+				},
 			},
 			"nix_expression": {
-				Description:   "(Mandatory when the `type` is `legacy`, otherwise prohibited.) The jobset's entrypoint Nix expression. The `file` must exist in an input which matches the name specified in `input`.",
-				Type:          schema.TypeSet,
-				Optional:      true,
-				ConflictsWith: []string{"flake_uri"},
-				MinItems:      1,
-				MaxItems:      1,
-				Elem:          nixExprSchema(),
+				Description: "(Mandatory when the `type` is `legacy`, otherwise prohibited.) The jobset's entrypoint Nix expression. The `file` must exist in an input which matches the name specified in `input`.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				MinItems:    1,
+				MaxItems:    1,
+				Elem:        nixExprSchema(),
+				ExactlyOneOf: []string{
+					"flake_uri",
+					"nix_expression",
+				},
 			},
 			"check_interval": {
 				Description: "How frequently to check the jobset in seconds (0 disables polling).",
@@ -278,14 +284,6 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 	}
 
 	flakeURI := d.Get("flake_uri").(string)
-	if jobsetType == 0 && flakeURI != "" {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  errsummary,
-			Detail:   "You cannot specify a flake_uri when using type \"legacy\".",
-		})
-	}
-
 	if jobsetType == 1 && flakeURI == "" {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -299,14 +297,6 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 	}
 
 	nixExpression := d.Get("nix_expression").(*schema.Set)
-	if jobsetType == 1 && len(nixExpression.List()) > 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  errsummary,
-			Detail:   "You cannot specify a nix_expression when using type \"flake\".",
-		})
-	}
-
 	if jobsetType == 0 && len(nixExpression.List()) < 1 {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
