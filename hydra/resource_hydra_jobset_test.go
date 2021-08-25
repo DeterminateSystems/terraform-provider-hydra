@@ -52,7 +52,7 @@ func TestAccHydraJobset_basic(t *testing.T) {
 			// Test if jobset has all required fields set
 			{
 				Config:      testAccHydraJobsetConfigEmptyNixExpr(name, name),
-				ExpectError: regexp.MustCompile(`Jobset type "legacy" requires a non-empty nix_expression.`),
+				ExpectError: regexp.MustCompile(`one of .* must be specified`),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckJobsetExists(resourceName),
 				),
@@ -105,18 +105,18 @@ func TestAccHydraJobset_flake(t *testing.T) {
 					testAccCheckJobsetExists(resourceName),
 				),
 			},
-			// Test invalid jobset identifier
+			// Test if jobset has all required fields set
 			{
-				Config:      testAccHydraJobsetConfigFlake(name, badname),
-				ExpectError: regexp.MustCompile("Invalid jobset identifier"),
+				Config:      testAccHydraJobsetConfigEmptyFlake(name, name),
+				ExpectError: regexp.MustCompile(`one of .* must be specified`),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckJobsetExists(resourceName),
 				),
 			},
-			// Test if jobset has all required fields set
+			// Test invalid jobset identifier
 			{
-				Config:      testAccHydraJobsetConfigEmptyFlake(name, name),
-				ExpectError: regexp.MustCompile(`Jobset type "flake" requires a non-empty flake_uri.`),
+				Config:      testAccHydraJobsetConfigFlake(name, badname),
+				ExpectError: regexp.MustCompile("Invalid jobset identifier"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckJobsetExists(resourceName),
 				),
