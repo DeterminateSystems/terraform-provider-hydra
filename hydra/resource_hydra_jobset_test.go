@@ -231,6 +231,27 @@ func TestAccHydraJobset_legacyToFlakeAndBack(t *testing.T) {
 	})
 }
 
+func TestAccHydraJobset_dynamicRunCommand(t *testing.T) {
+	// identifier must start with a letter
+	name := fmt.Sprintf("j%s", acctest.RandString(7))
+	resourceName := "hydra_jobset.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckHydraJobsetDestroy,
+		Steps: []resource.TestStep{
+			// Test creation of jobset with dynamic runcommands enabled
+			{
+				Config: testAccHydraJobsetConfigDynamicRunCommand(name, name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJobsetExists(resourceName),
+				),
+			},
+		},
+	})
+}
+
 // testAccCheckExampleResourceDestroy verifies the Jobset has been destroyed
 func testAccCheckHydraJobsetDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*api.ClientWithResponses)
@@ -819,6 +840,55 @@ resource "hydra_jobset" "test" {
     type              = "boolean"
     value             = "false"
     notify_committers = true
+  }
+}`, project, os.Getenv("HYDRA_USERNAME"), jobset)
+}
+
+func testAccHydraJobsetConfigDynamicRunCommand(project string, jobset string) string {
+	return fmt.Sprintf(`
+resource "hydra_project" "test" {
+  name         = "%s"
+  display_name = "Ofborg"
+  description  = "ofborg automation"
+  homepage     = "https://github.com/nixos/ofborg"
+  owner        = "%s"
+  enabled = true
+  visible = true
+  enable_dynamic_run_command = true
+}
+
+resource "hydra_jobset" "test" {
+  project     = hydra_project.test.name
+  state       = "enabled"
+  visible     = true
+  name        = "%s"
+  type        = "legacy"
+  description = ""
+  enable_dynamic_run_command = true
+
+  nix_expression {
+    file  = "release.nix"
+    input = "ofborg"
+  }
+
+  check_interval    = 0
+  scheduling_shares = 3000
+
+  email_notifications = false
+  keep_evaluations    = 3
+
+  input {
+    name              = "nixpkgs"
+    type              = "git"
+    value             = "https://github.com/NixOS/nixpkgs.git nixpkgs-unstable"
+    notify_committers = false
+  }
+
+  input {
+    name              = "ofborg"
+    type              = "git"
+    value             = "https://github.com/nixos/ofborg.git released"
+    notify_committers = false
   }
 }`, project, os.Getenv("HYDRA_USERNAME"), jobset)
 }

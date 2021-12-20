@@ -92,6 +92,12 @@ func resourceHydraProject() *schema.Resource {
 				MaxItems:    1,
 				Elem:        declInputSchema(),
 			},
+			"enable_dynamic_run_command": {
+				Description: "Whether or not to enable dynamic RunCommands for the project. Must be enabled by the server.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
@@ -136,6 +142,11 @@ func createProjectPutBody(project string, d *schema.ResourceData) *api.PutProjec
 			Type:  &inputType,
 			Value: &value,
 		}
+	}
+
+	enableDynamicRunCommand := d.Get("enable_dynamic_run_command").(bool)
+	if enableDynamicRunCommand {
+		body.EnableDynamicRunCommand = &enableDynamicRunCommand
 	}
 
 	return &body

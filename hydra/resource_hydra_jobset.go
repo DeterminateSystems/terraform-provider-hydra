@@ -164,6 +164,12 @@ func resourceHydraJobset() *schema.Resource {
 				MinItems:    1,
 				Elem:        inputSchema(),
 			},
+			"enable_dynamic_run_command": {
+				Description: "Whether or not to enable dynamic RunCommands for the jobset. Must be enabled by the server and parent project.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
@@ -358,6 +364,11 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 		body.Inputs = &api.Jobset_Inputs{
 			AdditionalProperties: inputs,
 		}
+	}
+
+	enableDynamicRunCommand := d.Get("enable_dynamic_run_command").(bool)
+	if enableDynamicRunCommand {
+		body.EnableDynamicRunCommand = &enableDynamicRunCommand
 	}
 
 	return &body, diags

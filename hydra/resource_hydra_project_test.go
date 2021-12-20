@@ -116,6 +116,28 @@ func TestAccHydraProject_declarative(t *testing.T) {
 	})
 }
 
+// Requires enabling the dynamicruncommand feature on the server
+func TestAccHydraProject_dynamicRunCommand(t *testing.T) {
+	// identifier must start with a letter
+	name := fmt.Sprintf("p%s", acctest.RandString(7))
+	resourceName := "hydra_project.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckHydraProjectDestroy,
+		Steps: []resource.TestStep{
+			// Test creation of project with dynamic runcommands enabled
+			{
+				Config: testAccHydraProjectConfigDynamicRunCommand(name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckProjectExists(resourceName),
+				),
+			},
+		},
+	})
+}
+
 // testAccCheckExampleResourceDestroy verifies the Project has been destroyed
 func testAccCheckHydraProjectDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*api.ClientWithResponses)
@@ -310,6 +332,21 @@ resource "hydra_project" "test" {
     type  = "git"
     value = "https://github.com/DeterminateSystems/hydra-examples.git main"
   }
+}
+`, name, os.Getenv("HYDRA_USERNAME"))
+}
+
+func testAccHydraProjectConfigDynamicRunCommand(name string) string {
+	return fmt.Sprintf(`
+resource "hydra_project" "test" {
+  name         = "%s"
+  display_name = "Nixpkgs"
+  description  = "Nix Packages collection"
+  homepage     = "http://nixos.org/nixpkgs"
+  owner        = "%s"
+  enabled = true
+  visible = true
+  enable_dynamic_run_command = true
 }
 `, name, os.Getenv("HYDRA_USERNAME"))
 }
