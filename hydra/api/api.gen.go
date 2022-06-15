@@ -252,13 +252,25 @@ type Jobset_Inputs struct {
 // JobsetEval defines model for JobsetEval.
 type JobsetEval struct {
 
-	// List of builds generated for this jobset evaluation
+	// List of builds generated for this jobset evaluation.
 	Builds *[]int `json:"builds,omitempty"`
 
-	// is true if the number of JobsetEval members is different from the prior evaluation. (will always be true on the first evaluation)
+	// How long it took (in seconds) to fetch the jobset inputs.
+	Checkouttime *int `json:"checkouttime,omitempty"`
+
+	// How long it took (in seconds) to evaluate the jobset.
+	Evaltime *int `json:"evaltime,omitempty"`
+
+	// For flake jobsets, the immutable flake reference allowing you to reproduce this evaluation. Null otherwise.
+	Flake *string `json:"flake"`
+
+	// Whether the number of JobsetEval members is different from the prior evaluation. This is always true on the first evaluation.
 	Hasnewbuilds     *bool                        `json:"hasnewbuilds,omitempty"`
 	Id               *int                         `json:"id,omitempty"`
 	Jobsetevalinputs *JobsetEval_Jobsetevalinputs `json:"jobsetevalinputs,omitempty"`
+
+	// Time in seconds since the Unix epoch when this evaluation was created.
+	Timestamp *int `json:"timestamp,omitempty"`
 }
 
 // JobsetEval_Jobsetevalinputs defines model for JobsetEval.Jobsetevalinputs.
@@ -368,6 +380,9 @@ type Project struct {
 
 	// username of the project owner
 	Owner *string `json:"owner,omitempty"`
+
+	// when set to true the project and all related objects are only accessible to authenticated users
+	Private *bool `json:"private,omitempty"`
 }
 
 // SearchResult defines model for SearchResult.
@@ -434,6 +449,9 @@ type PutProjectIdJSONBody struct {
 
 	// owner of the project
 	Owner *string `json:"owner,omitempty"`
+
+	// when set to true the project and all related objects are only accessible to authenticated users
+	Private *bool `json:"private,omitempty"`
 
 	// when set to true the project is displayed in the web interface
 	Visible *bool `json:"visible,omitempty"`
@@ -752,6 +770,9 @@ type ClientInterface interface {
 	// GetBuildBuildId request
 	GetBuildBuildId(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetBuildBuildIdConstituents request
+	GetBuildBuildIdConstituents(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetEvalBuildId request
 	GetEvalBuildId(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -830,6 +851,18 @@ func (c *Client) PutApiPush(ctx context.Context, params *PutApiPushParams, reqEd
 
 func (c *Client) GetBuildBuildId(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetBuildBuildIdRequest(c.Server, buildId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetBuildBuildIdConstituents(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetBuildBuildIdConstituentsRequest(c.Server, buildId)
 	if err != nil {
 		return nil, err
 	}
@@ -1146,6 +1179,40 @@ func NewGetBuildBuildIdRequest(server string, buildId int) (*http.Request, error
 	}
 
 	operationPath := fmt.Sprintf("/build/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = operationPath[1:]
+	}
+	operationURL := url.URL{
+		Path: operationPath,
+	}
+
+	queryURL := serverURL.ResolveReference(&operationURL)
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetBuildBuildIdConstituentsRequest generates requests for GetBuildBuildIdConstituents
+func NewGetBuildBuildIdConstituentsRequest(server string, buildId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "build-id", runtime.ParamLocationPath, buildId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/build/%s/constituents", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = operationPath[1:]
 	}
@@ -1679,6 +1746,9 @@ type ClientWithResponsesInterface interface {
 	// GetBuildBuildId request
 	GetBuildBuildIdWithResponse(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*GetBuildBuildIdResponse, error)
 
+	// GetBuildBuildIdConstituents request
+	GetBuildBuildIdConstituentsWithResponse(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*GetBuildBuildIdConstituentsResponse, error)
+
 	// GetEvalBuildId request
 	GetEvalBuildIdWithResponse(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*GetEvalBuildIdResponse, error)
 
@@ -1805,6 +1875,29 @@ func (r GetBuildBuildIdResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetBuildBuildIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetBuildBuildIdConstituentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Build
+	JSON404      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetBuildBuildIdConstituentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetBuildBuildIdConstituentsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2166,6 +2259,15 @@ func (c *ClientWithResponses) GetBuildBuildIdWithResponse(ctx context.Context, b
 	return ParseGetBuildBuildIdResponse(rsp)
 }
 
+// GetBuildBuildIdConstituentsWithResponse request returning *GetBuildBuildIdConstituentsResponse
+func (c *ClientWithResponses) GetBuildBuildIdConstituentsWithResponse(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*GetBuildBuildIdConstituentsResponse, error) {
+	rsp, err := c.GetBuildBuildIdConstituents(ctx, buildId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetBuildBuildIdConstituentsResponse(rsp)
+}
+
 // GetEvalBuildIdWithResponse request returning *GetEvalBuildIdResponse
 func (c *ClientWithResponses) GetEvalBuildIdWithResponse(ctx context.Context, buildId int, reqEditors ...RequestEditorFn) (*GetEvalBuildIdResponse, error) {
 	rsp, err := c.GetEvalBuildId(ctx, buildId, reqEditors...)
@@ -2392,6 +2494,39 @@ func ParseGetBuildBuildIdResponse(rsp *http.Response) (*GetBuildBuildIdResponse,
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Build
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetBuildBuildIdConstituentsResponse parses an HTTP response from a GetBuildBuildIdConstituentsWithResponse call
+func ParseGetBuildBuildIdConstituentsResponse(rsp *http.Response) (*GetBuildBuildIdConstituentsResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetBuildBuildIdConstituentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Build
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2831,3 +2966,4 @@ func ParseGetSearchResponse(rsp *http.Response) (*GetSearchResponse, error) {
 
 	return response, nil
 }
+

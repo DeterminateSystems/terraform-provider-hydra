@@ -120,6 +120,7 @@ renderProject() {
     enabled=$(boolFrom "$project" ".enabled")
     visible=$(boolFrom "$project" ".hidden == false")
     declarative=$(declarativeConfig "$project")
+    private=$(boolFrom "$project" ".private")
 
     cat <<-TPL
 resource "hydra_project" "$name" {
@@ -130,6 +131,7 @@ resource "hydra_project" "$name" {
   owner        = "$owner"
   enabled      = $enabled
   visible      = $visible
+  private      = $private
 TPL
 
     if [ -n "$declarative" ]; then
@@ -266,7 +268,7 @@ generate() {
 
                             echo "Processing jobset '$projectname/$jobsetname'..." >&2
                             echo
-                            jobset="$(curl --silent --header "Accept: application/json" "$serverRoot/jobset/$projectname/$jobsetname" | jq .)"
+                            jobset="$(curl --silent --header "Accept: application/json" "$serverRoot/jobset/$projectname/$jobsetname" -b "$cookieJar" | jq .)"
                             renderJobset "$projectname" "$jobsetname" "$jobset"
                         done < <(echo "$project" | jq -r ".jobsets | sort | .[]")
                     fi
@@ -283,7 +285,7 @@ generate() {
 }
 
 help() {
-    echo "Usage: $(basename "$0") <server-root> <out-dir> <import-file>"
+    echo "Usage: $(basename "$0") <server-root> <out-dir> <import-file> [--include-private]"
     echo
     echo "    Arguments:"
     echo "        <server-root>    The root of the Hydra server to import projects and jobsets from."
@@ -297,6 +299,12 @@ main() {
     serverRoot="$1"
     generatedDir="$2"
     importFile="$3"
+    if [ "${4:-}" = "--include-private" ]; then
+      includePrivate="1"
+    else
+      includePrivate="0"
+    fi
+    cookieJar="$(mktemp)"
 
     if [ -z "$serverRoot" ] || [ -z "$generatedDir" ] || [ -z "$importFile" ]; then
         help
@@ -315,11 +323,26 @@ main() {
     inputFile=$(mktemp -t projects.json.XXXXXXXXXX)
     finish() {
         rm -f "$inputFile"
+        rm -f "$cookieJar"
     }
     trap finish EXIT
 
+    if [ "$includePrivate" = 1 ]; then
+      echo -n "Username: "
+      read -r username
+      echo -n "Password: "
+      read -rs pw
+      curl -X POST -c "$cookieJar" \
+        "$serverRoot"/login \
+        --fail --silent --show-error -o /dev/null \
+        -d '{"username":"'"$username"'","password":"'"$pw"'"}' \
+        -H 'Accept: application/json' \
+        -H 'Content-Type: application/json' \
+        --referer "$serverRoot"
+    fi
+
     echo "Fetching projects.json..."
-    curl --silent --show-error --header "Accept: application/json" "$serverRoot" > "$inputFile"
+    curl --silent --show-error --header "Accept: application/json" "$serverRoot" -b "$cookieJar" > "$inputFile"
 
     echo "Starting generation..."
     generate

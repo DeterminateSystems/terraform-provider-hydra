@@ -92,6 +92,12 @@ func resourceHydraProject() *schema.Resource {
 				MaxItems:    1,
 				Elem:        declInputSchema(),
 			},
+			"private": {
+				Description: "Whether or not the project is private.",
+				Type:				 schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
@@ -120,6 +126,11 @@ func createProjectPutBody(project string, d *schema.ResourceData) *api.PutProjec
 	visible := d.Get("visible").(bool)
 	if visible {
 		body.Visible = &visible
+	}
+
+	private := d.Get("private").(bool)
+	if private {
+		body.Private = &private
 	}
 
 	declarative := d.Get("declarative").(*schema.Set)
@@ -218,6 +229,7 @@ func resourceHydraProjectRead(ctx context.Context, d *schema.ResourceData, m int
 	d.Set("owner", *projectResponse.Owner)
 	d.Set("enabled", *projectResponse.Enabled)
 	d.Set("visible", !(*projectResponse.Hidden))
+	d.Set("private", *projectResponse.Private)
 
 	// If Declarative can be dereferenced and every field is not empty, we update
 	// the internal representation with it. If the project was never declarative,
