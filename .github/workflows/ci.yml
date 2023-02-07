@@ -18,7 +18,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build
         run: nix-shell --run 'go build ./...'
 
@@ -29,7 +31,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check formatting
         run: |
           nix-shell --run '
@@ -44,7 +48,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check golint
         run: nix-shell --run 'golint -set_exit_status hydra'
 
@@ -61,7 +67,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Test Go
         run: nix-shell --run 'go test ./...'
 
@@ -78,7 +86,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - run: nix-shell --run 'make install'
       - name: Terraform fmt
         run: nix-shell --run 'terraform fmt -check -recursive ./examples'
@@ -115,7 +125,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check vendor is up-to-date
         run: |
           nix-shell --run '
@@ -132,7 +144,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Shellcheck ./tools/
         working-directory: ./tools
         run: nix-shell --run 'shellcheck $(find . -type f -executable)'
