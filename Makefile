@@ -42,7 +42,7 @@ hydra/api/api.gen.go: hydra/api/hydra-api.yaml
 .PHONY: hydra/api/hydra-api.yaml
 hydra/api/hydra-api.yaml:
 	mkdir -p $(shell dirname $@)
-	curl https://raw.githubusercontent.com/NixOS/hydra/master/hydra-api.yaml > $@
+	curl https://raw.githubusercontent.com/DeterminateSystems/hydra/runcommand/dynamic/hydra-api.yaml > $@
 
 # TODO
 # test:
