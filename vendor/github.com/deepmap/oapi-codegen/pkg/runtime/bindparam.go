@@ -26,19 +26,23 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/types"
 )
 
-// This function binds a parameter as described in the Path Parameters
+// BindStyledParameter binds a parameter as described in the Path Parameters
 // section here to a Go object:
 // https://swagger.io/docs/specification/serialization/
 // It is a backward compatible function to clients generated with codegen
 // up to version v1.5.5. v1.5.6+ calls the function below.
+//
+// Deprecated: This has been replaced by https://pkg.go.dev/github.com/oapi-codegen/runtime#BindStyledParameter
 func BindStyledParameter(style string, explode bool, paramName string,
 	value string, dest interface{}) error {
 	return BindStyledParameterWithLocation(style, explode, paramName, ParamLocationUndefined, value, dest)
 }
 
-// This function binds a parameter as described in the Path Parameters
+// BindStyledParameterWithLocation binds a parameter as described in the Path Parameters
 // section here to a Go object:
 // https://swagger.io/docs/specification/serialization/
+//
+// Deprecated: This has been replaced by https://pkg.go.dev/github.com/oapi-codegen/runtime#BindStyledParameterWithLocation
 func BindStyledParameterWithLocation(style string, explode bool, paramName string,
 	paramLocation ParamLocation, value string, dest interface{}) error {
 
@@ -212,7 +216,7 @@ func bindSplitPartsToDestinationArray(parts []string, dest interface{}) error {
 	for i, p := range parts {
 		err := BindStringToObject(p, newArray.Index(i).Addr().Interface())
 		if err != nil {
-			return fmt.Errorf("error setting array element: %s", err)
+			return fmt.Errorf("error setting array element: %w", err)
 		}
 	}
 	v.Set(newArray)
@@ -277,6 +281,8 @@ func bindSplitPartsToDestinationStruct(paramName string, parts []string, explode
 // tell them apart. This code tries to fail, but the moral of the story is that
 // you shouldn't pass objects via form styled query arguments, just use
 // the Content parameter form.
+//
+// Deprecated: This has been replaced by https://pkg.go.dev/github.com/oapi-codegen/runtime#BindQueryParameter
 func BindQueryParameter(style string, explode bool, required bool, paramName string,
 	queryParams url.Values, dest interface{}) error {
 

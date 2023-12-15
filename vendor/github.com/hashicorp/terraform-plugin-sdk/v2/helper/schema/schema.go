@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // schema is a high-level framework for easily writing new providers
 // for Terraform. Usage of schema is recommended over attempting to write
 // to the low-level plugin interfaces manually.
@@ -88,10 +91,6 @@ type Schema struct {
 	// Optional indicates whether the practitioner can choose to not enter
 	// a value in the configuration for this attribute. Optional cannot be used
 	// with Required.
-	//
-	// If also using Default or DefaultFunc, Computed should also be enabled,
-	// otherwise Terraform can output warning logs or "inconsistent result
-	// after apply" errors.
 	Optional bool
 
 	// Computed indicates whether the provider may return its own value for
@@ -311,32 +310,33 @@ type Schema struct {
 	// "parent_block_name.0.child_attribute_name".
 	RequiredWith []string
 
-	// Deprecated defines warning diagnostic details to display to
-	// practitioners configuring this attribute or block. The warning
+	// Deprecated defines warning diagnostic details to display when
+	// practitioner configurations use this attribute or block. The warning
 	// diagnostic summary is automatically set to "Argument is deprecated"
 	// along with configuration source file and line information.
 	//
-	// This warning diagnostic is only displayed during Terraform's validation
-	// phase when this field is a non-empty string, when the attribute is
-	// Required or Optional, and if the practitioner configuration attempts to
-	// set the attribute value to a known value. It cannot detect practitioner
-	// configuration values that are unknown ("known after apply").
-	//
-	// This field has no effect when the attribute is Computed-only (read-only;
-	// not Required or Optional) and a practitioner attempts to reference
-	// this attribute value in their configuration. There is a Terraform
-	// feature request to support this type of functionality:
-	//
-	//     https://github.com/hashicorp/terraform/issues/7569
-	//
 	// Set this field to a practitioner actionable message such as:
 	//
-	//     - "Configure other_attribute instead. This attribute will be removed
-	//       in the next major version of the provider."
-	//     - "Remove this attribute's configuration as it no longer is used and
-	//       the attribute will be removed in the next major version of the
-	//       provider."
+	//  - "Configure other_attribute instead. This attribute will be removed
+	//    in the next major version of the provider."
+	//  - "Remove this attribute's configuration as it no longer is used and
+	//    the attribute will be removed in the next major version of the
+	//    provider."
 	//
+	// In Terraform 1.2.7 and later, this warning diagnostic is displayed any
+	// time a practitioner attempts to configure a known value for this
+	// attribute and certain scenarios where this attribute is referenced.
+	//
+	// In Terraform 1.2.6 and earlier, this warning diagnostic is only
+	// displayed when the attribute is Required or Optional, and if the
+	// practitioner configuration attempts to set the attribute value to a
+	// known value. It cannot detect practitioner configuration values that
+	// are unknown ("known after apply").
+	//
+	// Additional information about deprecation enhancements for read-only
+	// attributes can be found in:
+	//
+	//  - https://github.com/hashicorp/terraform/issues/7569
 	Deprecated string
 
 	// ValidateFunc allows individual fields to define arbitrary validation
@@ -721,6 +721,9 @@ func (m schemaMap) Diff(
 
 			// Preserve the DestroyTainted flag
 			result2.DestroyTainted = result.DestroyTainted
+			result2.RawConfig = result.RawConfig
+			result2.RawPlan = result.RawPlan
+			result2.RawState = result.RawState
 
 			// Reset the data to not contain state. We have to call init()
 			// again in order to reset the FieldReaders.
@@ -936,7 +939,7 @@ func (m schemaMap) internalValidate(topSchemaMap schemaMap, attrsOnly bool) erro
 			case *Resource:
 				attrsOnly := attrsOnly || v.ConfigMode == SchemaConfigModeAttr
 
-				if err := schemaMap(t.Schema).internalValidate(topSchemaMap, attrsOnly); err != nil {
+				if err := schemaMap(t.SchemaMap()).internalValidate(topSchemaMap, attrsOnly); err != nil {
 					return err
 				}
 			case *Schema:
@@ -1066,7 +1069,7 @@ func checkKeysAgainstSchemaFlags(k string, keys []string, topSchemaMap schemaMap
 				return fmt.Errorf("%s configuration block reference (%s) can only be used with TypeList and MaxItems: 1 configuration blocks", k, key)
 			}
 
-			sm = schemaMap(subResource.Schema)
+			sm = subResource.SchemaMap()
 		}
 
 		if target == nil {
@@ -1089,9 +1092,10 @@ func checkKeysAgainstSchemaFlags(k string, keys []string, topSchemaMap schemaMap
 	return nil
 }
 
+var validFieldNameRe = regexp.MustCompile("^[a-z0-9_]+$")
+
 func isValidFieldName(name string) bool {
-	re := regexp.MustCompile("^[a-z0-9_]+$")
-	return re.MatchString(name)
+	return validFieldNameRe.MatchString(name)
 }
 
 // resourceDiffer is an interface that is used by the private diff functions.
@@ -1255,7 +1259,7 @@ func (m schemaMap) diffList(
 	case *Resource:
 		// This is a complex resource
 		for i := 0; i < maxLen; i++ {
-			for k2, schema := range t.Schema {
+			for k2, schema := range t.SchemaMap() {
 				subK := fmt.Sprintf("%s.%d.%s", k, i, k2)
 				err := m.diff(ctx, subK, schema, diff, d, all)
 				if err != nil {
@@ -1502,7 +1506,7 @@ func (m schemaMap) diffSet(
 			switch t := schema.Elem.(type) {
 			case *Resource:
 				// This is a complex resource
-				for k2, schema := range t.Schema {
+				for k2, schema := range t.SchemaMap() {
 					subK := fmt.Sprintf("%s.%s.%s", k, code, k2)
 					err := m.diff(ctx, subK, schema, diff, d, true)
 					if err != nil {
@@ -1731,15 +1735,7 @@ func (m schemaMap) validate(
 	// The SDK has to allow the unknown value through initially, so that
 	// Required fields set via an interpolated value are accepted.
 	if !isWhollyKnown(raw) {
-		if schema.Deprecated != "" {
-			return append(diags, diag.Diagnostic{
-				Severity:      diag.Warning,
-				Summary:       "Argument is deprecated",
-				Detail:        schema.Deprecated,
-				AttributePath: path,
-			})
-		}
-		return diags
+		return nil
 	}
 
 	err = validateConflictingAttributes(k, schema, c)
@@ -1942,7 +1938,7 @@ func (m schemaMap) validateList(
 		return append(diags, diag.Diagnostic{
 			Severity:      diag.Error,
 			Summary:       "Too many list items",
-			Detail:        fmt.Sprintf("Attribute supports %d item maximum, but config has %d declared.", schema.MaxItems, rawV.Len()),
+			Detail:        fmt.Sprintf("Attribute %s supports %d item maximum, but config has %d declared.", k, schema.MaxItems, rawV.Len()),
 			AttributePath: path,
 		})
 	}
@@ -1951,7 +1947,7 @@ func (m schemaMap) validateList(
 		return append(diags, diag.Diagnostic{
 			Severity:      diag.Error,
 			Summary:       "Not enough list items",
-			Detail:        fmt.Sprintf("Attribute requires %d item minimum, but config has only %d declared.", schema.MinItems, rawV.Len()),
+			Detail:        fmt.Sprintf("Attribute %s requires %d item minimum, but config has only %d declared.", k, schema.MinItems, rawV.Len()),
 			AttributePath: path,
 		})
 	}
@@ -1977,7 +1973,7 @@ func (m schemaMap) validateList(
 		switch t := schema.Elem.(type) {
 		case *Resource:
 			// This is a sub-resource
-			diags = append(diags, m.validateObject(key, t.Schema, c, p)...)
+			diags = append(diags, m.validateObject(key, t.SchemaMap(), c, p)...)
 		case *Schema:
 			diags = append(diags, m.validateType(key, raw, t, c, p)...)
 		}
@@ -2130,7 +2126,7 @@ func validateMapValues(k string, m map[string]interface{}, schema *Schema, path 
 				})
 			}
 		default:
-			panic(fmt.Sprintf("Unknown validation type: %#v", schema.Type))
+			panic(fmt.Sprintf("Unknown validation type: %#v", valueType))
 		}
 	}
 	return diags
