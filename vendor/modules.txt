@@ -436,9 +436,6 @@ github.com/pelletier/go-toml/v2/internal/characters
 github.com/pelletier/go-toml/v2/internal/danger
 github.com/pelletier/go-toml/v2/internal/tracker
 github.com/pelletier/go-toml/v2/unstable
-# github.com/pkg/errors v0.9.1
-## explicit
-github.com/pkg/errors
 # github.com/rogpeppe/go-internal v1.11.0
 ## explicit; go 1.19
 # github.com/russross/blackfriday/v2 v2.1.0

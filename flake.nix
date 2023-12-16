@@ -26,14 +26,16 @@
           default = pkgs.mkShell {
             name = "dev";
             buildInputs = with pkgs; [
-              go
-              terraform_1
               curl
-              oapi-codegen
-              # goimports # better than gofmt because it adds missing imports
-              golint
-              git-absorb
               findutils
+              git-absorb
+              go
+              golint
+              gotools
+              jq
+              oapi-codegen
+              shellcheck
+              terraform_1
             ];
           };
         });

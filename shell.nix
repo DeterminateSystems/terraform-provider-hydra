@@ -1,16 +1,10 @@
-let
-  sources = import ./nix/sources.nix;
-  pkgs = import sources.nixpkgs { };
-in
-pkgs.mkShell {
-  buildInputs = with pkgs; [
-    go
-    terraform_0_14
-    curl
-    oapi-codegen
-    goimports # better than gofmt because it adds missing imports
-    golint
-    git-absorb
-    findutils
-  ];
-}
+(import
+  (
+    let lock = builtins.fromJSON (builtins.readFile ./flake.lock); in
+    fetchTarball {
+      url = lock.nodes.flake-compat.locked.url or "https://github.com/edolstra/flake-compat/archive/${lock.nodes.flake-compat.locked.rev}.tar.gz";
+      sha256 = lock.nodes.flake-compat.locked.narHash;
+    }
+  )
+  { src = ./.; }
+).shellNix

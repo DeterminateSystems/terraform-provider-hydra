@@ -355,9 +355,7 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 			inputs[name] = jobsetInput
 		}
 
-		body.Inputs = &api.Jobset_Inputs{
-			AdditionalProperties: inputs,
-		}
+		body.Inputs = &inputs
 	}
 
 	return &body, diags
@@ -508,7 +506,7 @@ func resourceHydraJobsetRead(ctx context.Context, d *schema.ResourceData, m inte
 	}
 
 	if jobsetResponse.Inputs != nil {
-		inputs := schema.NewSet(schema.HashResource(inputSchema()), flattenInputs(jobsetResponse.Inputs.AdditionalProperties))
+		inputs := schema.NewSet(schema.HashResource(inputSchema()), flattenInputs(*jobsetResponse.Inputs))
 
 		d.Set("input", inputs)
 	} else {
