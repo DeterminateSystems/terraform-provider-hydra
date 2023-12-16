@@ -325,10 +325,11 @@ func testAccCheckJobsetInputsChanged(name string, inputName1 string, inputName2 
 		}
 
 		jobset := get.JSON200
+
 		if jobset.Inputs != nil && len(*jobset.Inputs) == 2 &&
-			((*jobset.Inputs)[inputName1].Name == nil || (*jobset.Inputs)[inputName1].Name != &inputName1) &&
-			((*jobset.Inputs)[inputName2].Name == nil || (*jobset.Inputs)[inputName2].Name != &inputName2) {
-			return fmt.Errorf("Expected inputs to have changed")
+			((*jobset.Inputs)[inputName1].Name == nil || *(*jobset.Inputs)[inputName1].Name != inputName1) &&
+			((*jobset.Inputs)[inputName2].Name == nil || *(*jobset.Inputs)[inputName2].Name != inputName2) {
+			return fmt.Errorf("Expected inputs to have changed: %v", jobset)
 		}
 
 		return nil
