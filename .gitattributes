@@ -2,3 +2,4 @@ nix/sources.nix linguist-generated=true
 hydra/api/api.gen.go linguist-generated=true
 hydra/api/hydra-api.yaml linguist-generated=true
 go.sum linguist-generated=true
+vendor/** -crlf

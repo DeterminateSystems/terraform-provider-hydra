@@ -97,7 +97,7 @@ jobs:
           nix-shell --run '
             for dir in $(find examples -type d); do
               echo "initializing dir $dir"
-              terraform init $dir
+              terraform -chdir=$dir init
             done
           '
       - name: Terraform validate
@@ -105,7 +105,7 @@ jobs:
           nix-shell --run '
             for dir in $(find examples -type d); do
               echo "validating dir $dir"
-              terraform validate -no-color $dir
+              terraform -chdir=$dir validate -no-color
             done
           '
       # TODO: needs hydra running
@@ -131,9 +131,13 @@ jobs:
       - name: Check vendor is up-to-date
         run: |
           nix-shell --run '
+          git config core.autocrlf false
             go mod tidy
             go mod vendor
-            if [ -n "$(git status -s)" ]; then
+            if ! git diff --ignore-all-space; then
+              echo "unclean"
+              git status || true
+              git diff || true
               exit 1
             fi'
 
@@ -149,4 +153,4 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Shellcheck ./tools/
         working-directory: ./tools
-        run: nix-shell --run 'shellcheck $(find . -type f -executable)'
+        run: nix-shell ../shell.nix --run 'shellcheck $(find . -type f -executable)'
