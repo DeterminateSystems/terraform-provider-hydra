@@ -11,8 +11,8 @@ github.com/CloudyKit/jet/v6
 # github.com/Joker/jade v1.1.3
 ## explicit; go 1.14
 github.com/Joker/jade
-# github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371
-## explicit; go 1.13
+# github.com/ProtonMail/go-crypto v1.1.0-alpha.0
+## explicit; go 1.17
 github.com/ProtonMail/go-crypto/bitcurves
 github.com/ProtonMail/go-crypto/brainpool
 github.com/ProtonMail/go-crypto/eax
@@ -23,6 +23,8 @@ github.com/ProtonMail/go-crypto/openpgp/aes/keywrap
 github.com/ProtonMail/go-crypto/openpgp/armor
 github.com/ProtonMail/go-crypto/openpgp/ecdh
 github.com/ProtonMail/go-crypto/openpgp/ecdsa
+github.com/ProtonMail/go-crypto/openpgp/ed25519
+github.com/ProtonMail/go-crypto/openpgp/ed448
 github.com/ProtonMail/go-crypto/openpgp/eddsa
 github.com/ProtonMail/go-crypto/openpgp/elgamal
 github.com/ProtonMail/go-crypto/openpgp/errors
@@ -31,6 +33,8 @@ github.com/ProtonMail/go-crypto/openpgp/internal/ecc
 github.com/ProtonMail/go-crypto/openpgp/internal/encoding
 github.com/ProtonMail/go-crypto/openpgp/packet
 github.com/ProtonMail/go-crypto/openpgp/s2k
+github.com/ProtonMail/go-crypto/openpgp/x25519
+github.com/ProtonMail/go-crypto/openpgp/x448
 # github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06
 ## explicit; go 1.17
 github.com/Shopify/goreferrer
@@ -216,7 +220,7 @@ github.com/hashicorp/go-uuid
 # github.com/hashicorp/go-version v1.6.0
 ## explicit
 github.com/hashicorp/go-version
-# github.com/hashicorp/hc-install v0.6.2
+# github.com/hashicorp/hc-install v0.6.3
 ## explicit; go 1.18
 github.com/hashicorp/hc-install
 github.com/hashicorp/hc-install/checkpoint
@@ -240,19 +244,20 @@ github.com/hashicorp/hcl/v2/hclsyntax
 # github.com/hashicorp/logutils v1.0.0
 ## explicit
 github.com/hashicorp/logutils
-# github.com/hashicorp/terraform-exec v0.19.0
+# github.com/hashicorp/terraform-exec v0.20.0
 ## explicit; go 1.18
 github.com/hashicorp/terraform-exec/internal/version
 github.com/hashicorp/terraform-exec/tfexec
-# github.com/hashicorp/terraform-json v0.18.0
+# github.com/hashicorp/terraform-json v0.21.0
 ## explicit; go 1.18
 github.com/hashicorp/terraform-json
-# github.com/hashicorp/terraform-plugin-go v0.20.0
-## explicit; go 1.20
+# github.com/hashicorp/terraform-plugin-go v0.22.0
+## explicit; go 1.21
 github.com/hashicorp/terraform-plugin-go/internal/logging
 github.com/hashicorp/terraform-plugin-go/tfprotov5
 github.com/hashicorp/terraform-plugin-go/tfprotov5/internal/diag
 github.com/hashicorp/terraform-plugin-go/tfprotov5/internal/fromproto
+github.com/hashicorp/terraform-plugin-go/tfprotov5/internal/funcerr
 github.com/hashicorp/terraform-plugin-go/tfprotov5/internal/tf5serverlogging
 github.com/hashicorp/terraform-plugin-go/tfprotov5/internal/tfplugin5
 github.com/hashicorp/terraform-plugin-go/tfprotov5/internal/toproto
@@ -260,6 +265,7 @@ github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server
 github.com/hashicorp/terraform-plugin-go/tfprotov6
 github.com/hashicorp/terraform-plugin-go/tfprotov6/internal/diag
 github.com/hashicorp/terraform-plugin-go/tfprotov6/internal/fromproto
+github.com/hashicorp/terraform-plugin-go/tfprotov6/internal/funcerr
 github.com/hashicorp/terraform-plugin-go/tfprotov6/internal/tf6serverlogging
 github.com/hashicorp/terraform-plugin-go/tfprotov6/internal/tfplugin6
 github.com/hashicorp/terraform-plugin-go/tfprotov6/internal/toproto
@@ -272,8 +278,8 @@ github.com/hashicorp/terraform-plugin-log/internal/hclogutils
 github.com/hashicorp/terraform-plugin-log/internal/logging
 github.com/hashicorp/terraform-plugin-log/tflog
 github.com/hashicorp/terraform-plugin-log/tfsdklog
-# github.com/hashicorp/terraform-plugin-sdk/v2 v2.31.0
-## explicit; go 1.20
+# github.com/hashicorp/terraform-plugin-sdk/v2 v2.33.0
+## explicit; go 1.21
 github.com/hashicorp/terraform-plugin-sdk/v2/diag
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/id
@@ -510,7 +516,7 @@ github.com/vmihailenco/tagparser/v2/internal/parser
 # github.com/yosssi/ace v0.0.5
 ## explicit
 github.com/yosssi/ace
-# github.com/zclconf/go-cty v1.14.1
+# github.com/zclconf/go-cty v1.14.2
 ## explicit; go 1.18
 github.com/zclconf/go-cty/cty
 github.com/zclconf/go-cty/cty/convert
@@ -543,7 +549,7 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 # golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611
 ## explicit; go 1.20
 golang.org/x/exp/maps
-# golang.org/x/mod v0.14.0
+# golang.org/x/mod v0.15.0
 ## explicit; go 1.18
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
@@ -603,7 +609,7 @@ google.golang.org/appengine/internal/remote_api
 # google.golang.org/genproto/googleapis/rpc v0.0.0-20231212172506-995d672761c0
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.60.0
+# google.golang.org/grpc v1.61.1
 ## explicit; go 1.19
 google.golang.org/grpc
 google.golang.org/grpc/attributes
