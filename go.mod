@@ -8,7 +8,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.16.2
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.33.0
-	golang.org/x/net v0.24.0
+	golang.org/x/net v0.33.0
 )
 
 require (
