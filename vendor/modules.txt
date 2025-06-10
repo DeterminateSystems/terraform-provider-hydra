@@ -84,7 +84,7 @@ github.com/chenzhuoyu/base64x
 ## explicit; go 1.16
 github.com/chenzhuoyu/iasm/expr
 github.com/chenzhuoyu/iasm/x86_64
-# github.com/cloudflare/circl v1.6.0
+# github.com/cloudflare/circl v1.6.1
 ## explicit; go 1.22.0
 github.com/cloudflare/circl/dh/x25519
 github.com/cloudflare/circl/dh/x448
