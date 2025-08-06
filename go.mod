@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/deepmap/oapi-codegen v1.16.3
-	github.com/hashicorp/go-retryablehttp v0.7.7
+	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0
 	golang.org/x/net v0.42.0
 )
