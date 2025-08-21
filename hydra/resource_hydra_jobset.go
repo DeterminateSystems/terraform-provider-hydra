@@ -316,13 +316,6 @@ func createJobsetPutBody(project string, jobset string, d *schema.ResourceData) 
 	}
 
 	input := d.Get("input").(*schema.Set)
-	if jobsetType == 1 && len(input.List()) > 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  errsummary,
-			Detail:   "You cannot specify one or more inputs when using type \"flake\".",
-		})
-	}
 
 	if jobsetType == 0 && len(input.List()) < 1 {
 		diags = append(diags, diag.Diagnostic{
